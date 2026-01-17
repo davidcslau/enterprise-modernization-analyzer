@@ -1,0 +1,8 @@
+# macOS
+.DS_Store
+
+# kiro steering (local only)
+.kiro/steering/*
+
+# reference files
+ref/*
