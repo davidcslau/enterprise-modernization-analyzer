@@ -104,7 +104,8 @@ enterprise-modernization-analyzer/
     ├── common/                           # Shared evaluation framework
     │   ├── evaluation-framework.md
     │   ├── report-structure.md
-    │   └── aws-target-services.md
+    │   ├── aws-target-services.md
+    │   └── j2ee-to-springboot-reactive.md  # J2EE → Spring Boot Reactive patterns
     ├── dotnet-to-aws.md                  # .NET → .NET 8 + AWS
     ├── websphere-to-springboot.md        # WebSphere → Spring Boot
     └── weblogic-to-springboot.md         # WebLogic → Spring Boot
