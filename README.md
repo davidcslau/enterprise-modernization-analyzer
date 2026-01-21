@@ -1,4 +1,4 @@
-# Enterprise Modernization Analyzer
+# Legacy App Modernization Analyzer
 
 A Kiro Power that provides enterprise-grade legacy codebase modernization analysis. Generates comprehensive AWS migration feasibility reports with visual architecture diagrams, proprietary dependency analysis, and strategic migration pathways.
 
@@ -43,7 +43,7 @@ The analyzer automatically detects your source platform:
 
 1. Open Kiro IDE
 2. Go to the Powers panel
-3. Install from GitHub: `https://github.com/davidcslau/enterprise-modernization-analyzer`
+3. Install from GitHub: `https://github.com/kiro-community/powers/legacy-app-modernization-analyzer`
 
 ## Prerequisites
 
@@ -96,7 +96,7 @@ The generated `MODERNIZATION_REPORT.md` includes:
 ## Project Structure
 
 ```
-enterprise-modernization-analyzer/
+legacy-app-modernization-analyzer/
 ├── POWER.md                              # Main power definition
 ├── mcp.json                              # MCP server configuration
 ├── README.md                             # This file
@@ -113,7 +113,7 @@ enterprise-modernization-analyzer/
 
 ## Version History
 
-### v2.0 - Enterprise Modernization Analyzer
+### v2.0 - Legacy App Modernization Analyzer
 - Multi-platform support: .NET, WebSphere, WebLogic
 - Platform auto-detection
 - Spring Boot Reactive target for Java platforms

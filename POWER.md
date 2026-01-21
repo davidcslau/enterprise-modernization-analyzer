@@ -1,12 +1,12 @@
 ---
-name: "enterprise-modernization-analyzer"
-displayName: "Enterprise Modernization Analyzer"
+name: "legacy-app-modernization-analyzer"
+displayName: "Legacy App Modernization Analyzer"
 description: "Analyzes legacy enterprise codebases (.NET, WebSphere, WebLogic) and generates comprehensive AWS modernization feasibility reports with visual architecture diagrams, dependency analysis, and migration pathways"
 keywords: [".NET", "WebSphere", "WebLogic", "Spring Boot", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta", "reactive"]
 version: "2.0"
 ---
 
-# Enterprise Modernization Analyzer
+# Legacy App Modernization Analyzer
 
 ## Overview
 
