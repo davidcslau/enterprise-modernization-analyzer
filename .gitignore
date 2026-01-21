@@ -2,7 +2,7 @@
 .DS_Store
 
 # kiro steering (local only)
-.kiro/steering/*
+.kiro/*
 
 # reference files
 ref/*
