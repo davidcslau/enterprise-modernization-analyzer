@@ -6,3 +6,6 @@
 
 # reference files
 ref/*
+
+# deploy folder
+deploy/

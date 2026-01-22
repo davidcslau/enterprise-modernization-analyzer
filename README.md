@@ -113,7 +113,7 @@ legacy-app-modernization-analyzer/
 
 ## Version History
 
-### v2.0 - Legacy App Modernization Analyzer
+### v2.0.0 - Legacy App Modernization Analyzer
 - Multi-platform support: .NET, WebSphere, WebLogic
 - Platform auto-detection
 - Spring Boot Reactive target for Java platforms
