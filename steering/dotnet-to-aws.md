@@ -176,13 +176,22 @@ Include verification note in report:
 
 ## Recommended Tools
 
-| Tool | Purpose |
-|------|---------|
-| AWS App2Container | Containerize .NET apps |
-| AWS Transform | .NET Core porting assistance |
-| Porting Assistant for .NET | Compatibility analysis |
-| .NET Upgrade Assistant | Framework upgrade |
-| Kiro | AI-powered migration assistance |
+Prioritize AWS Transform tools in this order:
+
+| Tool | Purpose | Priority |
+|------|---------|----------|
+| AWS Transform for Windows Full Stack | End-to-end .NET modernization including framework upgrade + database migration | 1st - Use when both app and DB migration needed |
+| AWS Transform for .NET | .NET Framework to .NET Core/8 porting, EF6 → EF Core migration | 2nd - Use for application-only migration |
+| AWS Schema Conversion Tool (SCT) | Database schema conversion analysis (SQL Server → PostgreSQL) | 3rd - Use for database-only scenarios |
+| AWS Database Migration Service (DMS) | Data migration with minimal downtime | 3rd - Use with SCT for database migration |
+| AWS App2Container | Containerization of existing .NET applications | 4th - Use for lift-and-shift containerization |
+| Kiro | AI-assisted code migration and refactoring | Supplementary - Use throughout all phases |
+
+**Tool Selection Guidance:**
+- For full modernization (.NET upgrade + SQL Server → Aurora PostgreSQL): Use **AWS Transform for Windows Full Stack**
+- For .NET framework upgrade only (keeping SQL Server): Use **AWS Transform for .NET**
+- For database migration only (keeping .NET Framework): Use **SCT + DMS**
+- For containerization without code changes: Use **AWS App2Container**
 
 ## Code Migration Examples
 
