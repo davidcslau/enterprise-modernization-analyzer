@@ -23,8 +23,8 @@ A Kiro Power that provides enterprise-grade legacy codebase modernization analys
 - **Database Migration**: SQL Server/Oracle/DB2 → Aurora PostgreSQL recommendations
 - **Strategic Alignment**: AWS 7 Rs and Gartner TIME framework classification
 - **Risk Assessment**: "Impact If Not Modernized" for every finding with probability ratings
-- **3 Migration Pathways**: Ranked by approachability with effort breakdown
-- **Cost-Benefit Analysis**: Qualitative assessments (Low/Medium/High/Very High)
+- **3 Migration Pathways**: Ranked by weighted Recommendation Score with visual dot indicators
+- **Cost-Benefit Analysis**: Qualitative assessments by default (Low/Medium/High/Very High), with optional detailed pricing simulation available on request
 
 ## Platform Detection
 
@@ -80,7 +80,7 @@ The power will:
 
 ## Output
 
-Report structure is defined by `steering/common/report-structure.md` (single source of truth):
+Report structure is defined by `steering/report-structure.md` (single source of truth):
 
 1. **Professional Advisory Notice** - Consultation disclaimer
 2. **Executive Summary** - Strategic verdict, feasibility score, risk of inaction
@@ -88,7 +88,11 @@ Report structure is defined by `steering/common/report-structure.md` (single sou
 4. **Critical Findings Matrix** - 10+ findings with priorities
 5. **Proprietary Dependency Analysis** - License verification, migration examples
 6. **Database Analysis** - Detection and migration opportunity
-7. **Recommended Pathways** - 3 pathways with comparison charts
+7. **Recommended Pathways** - 3 pathways with:
+   - Weighted Recommendation Scores (6 factors: Long-term Value, Implementation Risk, Cost Efficiency, Time to Value, Team Readiness, Business Continuity)
+   - Visual dot indicator scoring matrix (●●●●●●●●●○ format)
+   - Quadrant chart for effort vs value positioning
+   - Pros/cons tables and risk assessments
 8. **Next Steps** - Recommended pathway implementation roadmap
 9. **Cost-Benefit Analysis** - Pathway comparison (qualitative)
 10. **Solution Structure Summary** - Projects and complexity
@@ -102,11 +106,10 @@ legacy-app-modernization-analyzer/
 ├── mcp.json                              # MCP server configuration (fetch)
 ├── README.md                             # This file
 └── steering/
-    ├── common/                           # Shared framework (AUTHORITATIVE)
-    │   ├── evaluation-framework.md       # Universal evaluation areas
-    │   ├── report-structure.md           # Report format standards
-    │   ├── aws-target-services.md        # AWS service mappings
-    │   └── j2ee-to-springboot-reactive.md
+    ├── evaluation-framework.md           # Universal evaluation areas
+    ├── report-structure.md               # Report format standards (AUTHORITATIVE)
+    ├── aws-target-services.md            # AWS service mappings
+    ├── j2ee-to-springboot-reactive.md    # J2EE migration patterns
     ├── dotnet-to-aws.md                  # .NET → .NET 8 + AWS
     ├── websphere-to-springboot.md        # WebSphere → Spring Boot
     └── weblogic-to-springboot.md         # WebLogic → Spring Boot

@@ -133,6 +133,6 @@ This power activates when users mention:
 
 ## Output
 
-Generate report in `yymmddhhmm_MODERNIZATION_REPORT.md` following the structure defined in `steering/common/report-structure.md`. As for yymmddhhmm, it is the current time's year for yy, month for mm, day for dd, hour for hh and minutes for mm.
+Generate report in `yymmddhhmm_MODERNIZATION_REPORT.md` following the structure defined in `steering/common/report-structure.md`. As for yymmddhhmm, it is the current time's year for yy, month for mm, day for dd, hour for hh and minutes for mm (UTC Timezone).
 
 **CRITICAL:** The `steering/common/report-structure.md` file is the SINGLE SOURCE OF TRUTH for all report formatting, section structure, visualization standards, and quality requirements. Do NOT deviate from it.

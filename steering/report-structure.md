@@ -10,7 +10,7 @@ This defines the standard report structure for ALL modernization analyses (.NET,
 
 **This file is the SINGLE SOURCE OF TRUTH for report formatting. Follow these rules exactly:**
 
-1. **NO dollar amounts** - Use qualitative levels (Low/Medium/High/Very High) only
+1. **NO dollar amounts by default** - Use qualitative levels (Low/Medium/High/Very High) for cost estimates
 2. **NO time estimates** - No hours, days, weeks, or months anywhere in the report
 3. **NO real dates** - Gantt charts use generic weeks (Week 1, Week 2, etc.)
 4. **NO file counts or line counts** - Solution Structure is simple
@@ -18,12 +18,14 @@ This defines the standard report structure for ALL modernization analyses (.NET,
 6. **Professional Advisory Notice goes at TOP** - Before Executive Summary, not at the end
 7. **Cost-Benefit Analysis compares PATHWAYS** - Current vs Pathway 1 vs Pathway 2 vs Pathway 3 (NOT by component like Database/Compute/Storage)
 8. **Legends REQUIRED** - Every architecture diagram must have a color legend after it
-9. **Stacked bar chart for costs** - Shows one-time AND recurring costs per pathway
+9. **Gantt chart for 3-Year costs** - Use Mermaid Gantt as stacked horizontal bars (NOT line chart, NOT pie chart)
 10. **NO "Quick Wins" section** - Implementation timeline is based on recommended pathway phases only
 11. **Pathway Theme required** - Each pathway needs a 3-5 sentence theme paragraph
 12. **Pros and Cons required** - Each pathway needs a pros/cons table
 13. **Parallel tasks in Gantt** - Show concurrent tasks and dependencies clearly
 14. **ABSOLUTELY NO ASCII ART** - ALL diagrams MUST use Mermaid.js syntax ONLY
+15. **Visual dot indicators for scoring** - Use ●●●●●●●●●○ (9) format in Pathway Scoring Matrix
+16. **OPTIONAL detailed pricing** - User can request 1,000 vCPU assumption with real AWS HK region pricing (see Section 9 Appendix)
 
 ---
 
@@ -201,6 +203,37 @@ For EACH significant proprietary library requiring migration, provide:
 
 Generate exactly 3 distinct pathways.
 
+#### Pathway Recommendation Scoring Framework
+
+Each pathway is evaluated using a weighted scoring system across 6 key factors. The **Recommendation Score** is a weighted average that balances all factors for decision-making.
+
+**Scoring Factors & Weights:**
+
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| Long-term Value | 25% | Cost savings, performance gains, future-proofing potential |
+| Implementation Risk | 20% | Technical complexity, failure probability, rollback difficulty |
+| Cost Efficiency | 20% | Infrastructure savings, licensing elimination, operational overhead reduction |
+| Time to Value | 15% | How quickly benefits are realized after migration |
+| Team Readiness | 10% | Skills availability, training requirements, learning curve |
+| Business Continuity | 10% | Disruption to operations during migration, parallel running capability |
+
+**Pathway Scoring Matrix:**
+
+Use visual dot indicators to show scores. Format: `●●●●●●●●●○ (9)` where filled dots = score, empty dots = remaining to 10.
+
+| Factor (Weight) | Pathway 1: Full Modernization | Pathway 2: Lift & Optimize | Pathway 3: Containerize Only |
+|-----------------|-------------------------------|---------------------------|------------------------------|
+| Long-term Value (25%) | ●●●●●●●●●○ (9) | ●●●●●●○○○○ (6) | ●●●○○○○○○○ (3) |
+| Implementation Risk (20%) | ●●●●●●○○○○ (6) | ●●●●●●●○○○ (7) | ●●●●●●●●●○ (9) |
+| Cost Efficiency (20%) | ●●●●●●●●●○ (9) | ●●●●●○○○○○ (5) | ●●●○○○○○○○ (3) |
+| Time to Value (15%) | ●●●●●○○○○○ (5) | ●●●●●●●○○○ (7) | ●●●●●●●●●○ (9) |
+| Team Readiness (10%) | ●●●●●●○○○○ (6) | ●●●●●●●○○○ (7) | ●●●●●●●●●○ (9) |
+| Business Continuity (10%) | ●●●●●●●○○○ (7) | ●●●●●●●●○○ (8) | ●●●●●●●●●○ (9) |
+| **Recommendation Score** | **7.4/10** | **6.4/10** | **5.4/10** |
+
+> 📋 **Scoring Note**: Higher scores are better for all factors. Implementation Risk is scored inversely (10 = lowest risk, 1 = highest risk). The Recommendation Score is calculated as the weighted average of all factors. Pathway 1 excels in long-term value and cost efficiency but requires more effort. Pathway 3 scores high on ease factors but low on value factors.
+
 **Pathway Comparison Matrix** (Mermaid quadrantChart):
 ```mermaid
 quadrantChart
@@ -220,7 +253,7 @@ quadrantChart
 
 For each pathway:
 
-**Pathway N: [Name] (Approachability: X/10)** - ✅ RECOMMENDED / ❌ NOT RECOMMENDED
+**Pathway N: [Name] (Recommendation Score: X.X/10)** - ✅ RECOMMENDED / ❌ NOT RECOMMENDED
 
 - **7 Rs Classification:** Classification (with brief description)
 - **Gartner TIME:** Classification
@@ -287,6 +320,8 @@ Use generic week numbers (Week 1, Week 2, etc.) - NO real dates. The Gantt chart
 - Dependencies between tasks (stacked/sequential where required)
 - Clear visualization of which tasks block others
 
+**CRITICAL: Use explicit start/end positions, NOT `after` syntax.** The `after` keyword does not render correctly with `dateFormat X`. Always use `:taskId, startWeek, endWeek` format.
+
 ```mermaid
 gantt
     title Recommended Pathway Implementation (Indicative Timeline)
@@ -296,19 +331,25 @@ gantt
     section Phase 1: [Name]
     Task 1 (Foundation)           :a1, 0, 2
     Task 2 (Can run parallel)     :a2, 0, 2
-    Task 3 (Depends on Task 1)    :a3, after a1, 1
+    Task 3 (Depends on Task 1)    :a3, 2, 3
     
     section Phase 2: [Name]
-    Task 4 (Depends on Phase 1)   :b1, after a3, 3
-    Task 5 (Parallel with Task 4) :b2, after a3, 2
-    Task 6 (Depends on Task 4)    :b3, after b1, 2
+    Task 4 (Depends on Phase 1)   :b1, 3, 6
+    Task 5 (Parallel with Task 4) :b2, 3, 5
+    Task 6 (Depends on Task 4)    :b3, 6, 8
     
     section Phase 3: [Name]
-    Task 7 (Depends on Phase 2)   :c1, after b3, 2
-    Task 8 (Parallel with Task 7) :c2, after b3, 3
+    Task 7 (Depends on Phase 2)   :c1, 8, 10
+    Task 8 (Parallel with Task 7) :c2, 8, 11
 ```
 
-**Key:** Tasks on the same row starting at the same time run in parallel. Tasks using `after` syntax show dependencies.
+**Gantt Chart Syntax Rules:**
+- Format: `:taskId, startWeek, endWeek` (e.g., `:a1, 0, 2` means Week 0 to Week 2)
+- Parallel tasks: Same start week (e.g., `:a1, 0, 2` and `:a2, 0, 2`)
+- Sequential tasks: Next task starts where previous ends (e.g., `:a3, 2, 3` follows `:a1, 0, 2`)
+- **DO NOT use `after` keyword** - it doesn't render correctly with numeric date format
+
+**Key:** Tasks with the same start week run in parallel. Sequential dependencies are shown by starting a task at the end week of its predecessor.
 
 #### Phase Breakdown
 
@@ -351,69 +392,179 @@ Note: For .NET modernization, prefer AWS Transform for Windows Full Stack when b
 
 **CRITICAL: This section compares costs BY PATHWAY (Current vs Pathway 1 vs Pathway 2 vs Pathway 3), NOT by component (Database/Compute/Storage). Do NOT create charts showing cost by component.**
 
-#### Pathway Cost Comparison
+#### 3-Year Cost Comparison (Qualitative)
 
-Use a stacked bar chart to compare relative costs across Current state and all pathways. The X-axis MUST be pathways, NOT components. Show BOTH one-time migration costs AND recurring operational costs:
+Use qualitative levels (Low/Medium/High/Very High) - NO dollar amounts by default:
 
-```mermaid
-xychart-beta
-    title "Relative Cost Comparison by Pathway (Stacked: One-Time + Recurring)"
-    x-axis ["Current", "Pathway 1", "Pathway 2", "Pathway 3"]
-    y-axis "Relative Cost %" 0 --> 150
-    bar "One-Time Migration Cost" [0, 40, 25, 10]
-    bar "Recurring Annual Cost" [100, 35, 55, 90]
-```
-
-**WRONG (DO NOT DO THIS):**
-```
-x-axis ["Database", "Compute", "Storage", "Network"]  ❌ WRONG - This compares components, not pathways
-```
-
-**CORRECT:**
-```
-x-axis ["Current", "Pathway 1", "Pathway 2", "Pathway 3"]  ✅ CORRECT - This compares pathways
-```
-
-**Chart Legend:**
-| Pathway | Description | One-Time Cost | Recurring Cost | Total First Year |
-|---------|-------------|---------------|----------------|------------------|
-| Current | Baseline (no migration) | None | 100% (baseline) | 100% |
-| Pathway 1: [Name] | Brief description | Level (X%) | X% of current | X% |
-| Pathway 2: [Name] | Brief description | Level (X%) | X% of current | X% |
-| Pathway 3: [Name] | Brief description | Level (X%) | X% of current | X% |
-
-**Cost Categories Explained:**
-- **One-Time Costs**: Migration effort, tooling, training, testing, deployment, refactoring
-- **Recurring Costs**: Infrastructure, licensing, maintenance, operations, support
-
-#### Detailed Cost Breakdown by Pathway
-
-Use qualitative levels (Low/Medium/High/Very High) - NO dollar amounts:
 | Cost Factor | Current | Pathway 1 | Pathway 2 | Pathway 3 |
 |-------------|---------|-----------|-----------|-----------|
-| Compute | Level | Level | Level | Level |
-| Database | Level | Level | Level | Level |
-| Licensing | Level | Level | Level | Level |
-| Migration Effort | N/A | Level | Level | Level |
-| Operational Overhead | Level | Level | Level | Level |
-| **Overall Recurring** | Baseline | X% savings | X% savings | X% savings |
+| Compute | Baseline | Low | Medium | High |
+| Database | Baseline | Low | High | High |
+| Licensing | High | None | Medium | High |
+| Migration Effort | N/A | High | Medium | Low |
+| Operational Overhead | High | Low | Medium | High |
+| **Overall Recurring** | Baseline | **60-70% savings** | **30-40% savings** | **~0% savings** |
 
-#### Database Migration ROI (if applicable)
+#### 3-Year Cost Visualization
 
-| Factor | Current DB | Target DB | Impact |
-|--------|------------|-----------|--------|
-| Licensing Cost | Level | Level | **Savings description** |
+Use a Mermaid Gantt chart to create stacked horizontal bars showing relative year-by-year costs:
+
+```mermaid
+gantt
+    title 3-Year Relative Cost Comparison (Baseline = 100)
+    dateFormat X
+    axisFormat %s
+    todayMarker off
+
+    section Current (300)
+    Year 1 - 100    :active, 0, 100
+    Year 2 - 100    :crit, 100, 200
+    Year 3 - 100    :200, 300
+
+    section Pathway 1 (~100)
+    Year 1 - 45     :active, 0, 45
+    Year 2 - 25     :crit, 45, 70
+    Year 3 - 25     :70, 95
+
+    section Pathway 2 (~180)
+    Year 1 - 70     :active, 0, 70
+    Year 2 - 55     :crit, 70, 125
+    Year 3 - 55     :125, 180
+
+    section Pathway 3 (~305)
+    Year 1 - 105    :active, 0, 105
+    Year 2 - 100    :crit, 105, 205
+    Year 3 - 100    :205, 305
+```
+
+**Legend:** 🔵 Year 1 (active = blue) | 🔴 Year 2 (crit = red) | 🩵 Year 3 (no status = teal/cyan) — X-axis: Relative cost units (Current annual = 100). Bar length represents cumulative 3-year cost.
+
+**Gantt Chart Color Reference:**
+- `active` = blue
+- `crit` = red
+- (no status) = teal/cyan
+
+#### Key Cost Drivers
+
+| Driver | Impact | Pathway 1 | Pathway 2 | Pathway 3 |
+|--------|--------|-----------|-----------|-----------|
+| Database Licensing | Very High | ✅ Eliminated | ❌ Retained | ❌ Retained |
+| OS Licensing | High | ✅ Eliminated | ✅ Eliminated | ❌ Retained |
+| Graviton ARM64 | Medium | ✅ 20% savings | ❌ Not available | ❌ Not available |
+| Serverless DB | Medium | ✅ Auto-scaling | ❌ Not used | ❌ Not used |
 
 #### ROI Summary
 
-| Metric | Assessment |
-|--------|------------|
-| Investment Level | Level |
-| Returns Potential | Level |
-| Payback Period | Qualitative (Short/Medium/Long term) |
-| Risk-Adjusted Value | Level |
+| Metric | Pathway 1 | Pathway 2 | Pathway 3 |
+|--------|-----------|-----------|-----------|
+| Investment Level | High | Medium | Low |
+| Returns Potential | Very High | Medium | None |
+| Payback Period | Short-term (months) | Short-term (months) | N/A |
+| Risk-Adjusted Value | High | Medium | Low |
 
-**Key Value Drivers** (bullet list)
+**Key Value Drivers:**
+- Pathway 1: Maximum savings from eliminating all licensing costs + Graviton compute
+- Pathway 2: Moderate savings from OS license elimination only
+- Pathway 3: No recurring savings; only operational benefits
+
+#### Cost Optimization Opportunities
+
+| Optimization | Potential Additional Savings |
+|--------------|------------------------------|
+| Compute Savings Plans (1-year) | Up to 17% |
+| Compute Savings Plans (3-year) | Up to 52% |
+| Reserved Capacity | Up to 35% on databases |
+| Spot Instances | Up to 70% on eligible tasks |
+| Right-sizing | 10-30% typical |
+
+---
+
+### OPTIONAL: Detailed Cost Simulation (1,000 vCPU Assumption)
+
+> 📋 **User Request Required**: This section is ONLY included if the user explicitly requests detailed cost calculations. Ask: *"Would you like me to include a detailed cost simulation based on 1,000 vCPUs with real AWS Hong Kong region pricing?"*
+
+If requested, include the following detailed analysis:
+
+#### Baseline Assumption
+
+> 📋 **Baseline Assumption**: This analysis assumes a production workload of **1,000 vCPUs** running continuously (24/7/365) in **Asia Pacific (Hong Kong)** region. All prices are based on on-demand pricing as of January 2025. Actual costs may vary based on Reserved Instance commitments, Savings Plans, and usage patterns.
+
+#### Pricing Reference Sources
+
+| Service | Pricing Source |
+|---------|---------------|
+| ECS Fargate | [AWS Fargate Pricing](https://aws.amazon.com/fargate/pricing/) |
+| RDS SQL Server | [AWS RDS SQL Server Pricing](https://aws.amazon.com/rds/sqlserver/pricing/) |
+| Aurora PostgreSQL | [AWS Aurora Pricing](https://aws.amazon.com/rds/aurora/pricing/) |
+
+#### Compute Pricing Breakdown (per vCPU-hour, HK Region)
+
+| Platform | vCPU/hour | Memory/GB/hour | OS License/vCPU/hour | Total/vCPU/hour (with 2GB RAM) |
+|----------|-----------|----------------|---------------------|-------------------------------|
+| Fargate Linux/x86 | $0.0XXX | $0.00XXX | — | **$0.0XXX** |
+| Fargate Linux/ARM (Graviton) | $0.0XXX | $0.00XXX | — | **$0.0XXX** |
+| Fargate Windows/x86 | $0.0XXX | $0.0XXX | $0.0XX | **$0.1XXX** |
+
+#### Database Pricing Breakdown (HK Region)
+
+| Database | Instance/Capacity | Hourly Cost | Monthly Cost (730 hrs) | Notes |
+|----------|-------------------|-------------|------------------------|-------|
+| RDS SQL Server Standard (Multi-AZ) | db.m5.2xlarge | ~$X.XX/hr | ~$X,XXX | License included |
+| Aurora PostgreSQL Serverless v2 | Per ACU | $0.XX/ACU-hour | $XX.XX/ACU | 1 ACU ≈ 2GB RAM |
+
+> 📋 **Database Sizing Rationale**: For a typical web application, database compute is commonly 5-10% of application tier capacity. For 1,000 app vCPUs, 2 × db.m5.2xlarge (16 vCPU total) or 16 ACU Aurora is reasonable.
+
+#### Detailed Cost Model per Pathway
+
+**Current State:**
+| Cost Component | Calculation | Monthly Cost | Annual Cost |
+|----------------|-------------|--------------|-------------|
+| Fargate Windows Compute | 1,000 vCPU × $X.XX/hr × 730 hrs | $XX,XXX | $XXX,XXX |
+| Fargate Windows Memory | 2,000 GB × $X.XX/hr × 730 hrs | $XX,XXX | $XXX,XXX |
+| Windows OS License | 1,000 vCPU × $X.XX/hr × 730 hrs | $XX,XXX | $XXX,XXX |
+| RDS SQL Server (Multi-AZ) | 2 × db.m5.2xlarge × $X.XX/hr × 730 hrs | $X,XXX | $XXX,XXX |
+| **Total Current State** | | **$XXX,XXX** | **$X,XXX,XXX** |
+
+**Pathway 1 (Full Modernization):**
+| Cost Component | Calculation | Monthly Cost | Annual Cost |
+|----------------|-------------|--------------|-------------|
+| Fargate Graviton Compute | 1,000 vCPU × $X.XX/hr × 730 hrs | $XX,XXX | $XXX,XXX |
+| Fargate Graviton Memory | 2,000 GB × $X.XX/hr × 730 hrs | $X,XXX | $XX,XXX |
+| Aurora PostgreSQL Serverless v2 | 16 ACU × $X.XX/hr × 730 hrs | $X,XXX | $XX,XXX |
+| **Total Pathway 1 Recurring** | | **$XX,XXX** | **$XXX,XXX** |
+
+**One-Time Migration Costs:**
+
+| Migration Component | Internal Team | Professional Services | Tooling/Infra | Total |
+|--------------------|---------------|----------------------|---------------|-------|
+| Framework Migration | $XX,XXX | $XX,XXX | $XX,XXX | $XXX,XXX |
+| Database Migration | $XX,XXX | $XX,XXX | $X,XXX | $XX,XXX |
+| Testing & Validation | $XX,XXX | $XX,XXX | $XX,XXX | $XX,XXX |
+| Training | $X,XXX | $XX,XXX | — | $XX,XXX |
+| **Total One-Time** | **$XX,XXX** | **$XXX,XXX** | **$XX,XXX** | **$XXX,XXX** |
+
+#### 3-Year TCO Comparison (Detailed)
+
+| Pathway | Year 1 | Year 2 | Year 3 | 3-Year Total | vs Current |
+|---------|--------|--------|--------|--------------|------------|
+| **Current** | $X.XXM | $X.XXM | $X.XXM | **$X.XXM** | — |
+| **Pathway 1** | $X.XXM | $X.XXM | $X.XXM | **$X.XXM** | **-XX%** |
+| **Pathway 2** | $X.XXM | $X.XXM | $X.XXM | **$X.XXM** | **-XX%** |
+| **Pathway 3** | $X.XXM | $X.XXM | $X.XXM | **$X.XXM** | **-X%** |
+
+#### ROI Analysis (Detailed)
+
+| Metric | Pathway 1 | Pathway 2 | Pathway 3 |
+|--------|-----------|-----------|-----------|
+| One-Time Investment | $XXX,XXX | $XXX,XXX | $XX,XXX |
+| Annual Savings | $X,XXX,XXX | $XXX,XXX | $0 |
+| Payback Period | **~X.X months** | **~X.X months** | N/A |
+| 3-Year Net Savings | **$X,XXX,XXX** | **$X,XXX,XXX** | **-$XX,XXX** |
+| 3-Year ROI | **X,XXX%** | **X,XXX%** | **-100%** |
+
+> 📋 **Sources**: Pricing data sourced from AWS official pricing pages (January 2025). See linked URLs for current rates.
+
+---
 
 ### 10. Solution Structure Summary
 
@@ -443,8 +594,7 @@ Brief summary including:
 2. **Dependency Graphs**: `graph TD` with color-coded styles
 3. **Flowcharts**: `flowchart LR` or `flowchart TB` with subgraphs for phases
 4. **Quadrant Charts**: `quadrantChart` for pathway comparison
-5. **Gantt Charts**: `gantt` with generic week format (dateFormat X, axisFormat Week %s)
-6. **XY Charts**: `xychart-beta` for cost comparisons
+5. **Gantt Charts**: `gantt` for both implementation timelines (dateFormat X, axisFormat Week %s) AND 3-year cost visualization (as horizontal stacked bars)
 
 ### Color Coding Standards
 
@@ -483,8 +633,12 @@ Before completing the report, verify:
 
 **PATHWAYS:**
 - [ ] Exactly 3 pathways with full detail
+- [ ] Pathway Scoring Matrix uses visual dot indicators: ●●●●●●●●●○ (9) format
+- [ ] Scoring Note explains the weighted average calculation
+- [ ] Each pathway has a "Recommendation Score" (weighted average, X.X/10)
 - [ ] Each pathway has a "Pathway Theme" paragraph (3-5 sentences)
 - [ ] Each pathway has a "Pros and Cons" table
+- [ ] Pathway with highest Recommendation Score is marked ✅ RECOMMENDED
 
 **NEXT STEPS:**
 - [ ] NO "Quick Wins" section - implementation is based on recommended pathway only
@@ -494,15 +648,22 @@ Before completing the report, verify:
 - [ ] Gantt chart uses generic weeks (no real dates)
 
 **COST-BENEFIT:**
-- [ ] Cost-Benefit Analysis chart X-axis is PATHWAYS (Current, Pathway 1, 2, 3) NOT components
-- [ ] Cost chart is a STACKED BAR showing BOTH one-time AND recurring costs
-- [ ] Cost-benefit analysis uses qualitative levels (no dollar amounts)
+- [ ] 3-Year Cost Comparison table uses qualitative levels (Low/Medium/High) by default
+- [ ] 3-Year Cost Visualization uses Mermaid GANTT chart as stacked horizontal bars with RELATIVE units
+- [ ] Gantt chart legend explains colors: 🔵 Year 1 (active) | 🔴 Year 2 (crit) | 🩵 Year 3 (no status)
+- [ ] Key Cost Drivers table shows which costs are eliminated/retained per pathway
+- [ ] ROI Summary uses qualitative assessments (High/Medium/Low, Short-term/Long-term)
+- [ ] Cost Optimization Opportunities table included
+- [ ] OPTIONAL: If user requests detailed pricing, include 1,000 vCPU simulation with HK region pricing
 
 **FORBIDDEN:**
+- [ ] NO dollar amounts in default Cost-Benefit section (use qualitative levels)
 - [ ] NO effort estimates in hours/days/weeks
 - [ ] NO file counts or line counts
-- [ ] NO Appendix section
+- [ ] NO Appendix section (except optional detailed pricing if requested)
 - [ ] NO ASCII art diagrams
+- [ ] NO line charts or pie charts for cost visualization (use Gantt as horizontal bars)
+- [ ] NO radar charts (use visual dot matrix instead)
 
 **FINAL:**
 - [ ] Solution Structure Summary is simple (no file/line counts)
