@@ -1,11 +1,65 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: "POWER.md"
+inclusion: always
 ---
 
 # Modernization Report Structure
 
 This defines the standard report structure for ALL modernization analyses (.NET, WebLogic, WebSphere).
+
+## CRITICAL RULES - READ FIRST
+
+**This file is the SINGLE SOURCE OF TRUTH for report formatting. Follow these rules exactly:**
+
+1. **NO dollar amounts** - Use qualitative levels (Low/Medium/High/Very High) only
+2. **NO time estimates** - No hours, days, weeks, or months anywhere in the report
+3. **NO real dates** - Gantt charts use generic weeks (Week 1, Week 2, etc.)
+4. **NO file counts or line counts** - Solution Structure is simple
+5. **NO Appendix section** - Report ends with Conclusion
+6. **Professional Advisory Notice goes at TOP** - Before Executive Summary, not at the end
+7. **Cost-Benefit Analysis compares PATHWAYS** - Current vs Pathway 1 vs Pathway 2 vs Pathway 3 (NOT by component like Database/Compute/Storage)
+8. **Legends REQUIRED** - Every architecture diagram must have a color legend after it
+9. **Stacked bar chart for costs** - Shows one-time AND recurring costs per pathway
+10. **NO "Quick Wins" section** - Implementation timeline is based on recommended pathway phases only
+11. **Pathway Theme required** - Each pathway needs a 3-5 sentence theme paragraph
+12. **Pros and Cons required** - Each pathway needs a pros/cons table
+13. **Parallel tasks in Gantt** - Show concurrent tasks and dependencies clearly
+14. **ABSOLUTELY NO ASCII ART** - ALL diagrams MUST use Mermaid.js syntax ONLY
+
+---
+
+## VISUALIZATION REQUIREMENTS - MERMAID ONLY
+
+**⛔ ASCII ART IS STRICTLY FORBIDDEN ⛔**
+
+ALL diagrams in this report MUST be Mermaid.js diagrams. ASCII art diagrams are NOT ACCEPTABLE and will cause the report to FAIL quality checks.
+
+### FORBIDDEN - DO NOT USE:
+```
+❌ ASCII art boxes:
++------------------+
+|   Component      |
++------------------+
+        |
+        v
++------------------+
+|   Another        |
++------------------+
+
+❌ ASCII arrows: -->, ===>, |---> 
+❌ ASCII boxes: [____], +----+, |    |
+❌ Text-based flow diagrams
+❌ Any diagram made with +, -, |, or > characters
+```
+
+### REQUIRED - USE ONLY MERMAID:
+```mermaid
+graph TD
+    A[Component] --> B[Another]
+```
+
+**RULE: If you find yourself typing `+`, `-`, `|`, or `>` characters to draw boxes or arrows, STOP IMMEDIATELY and use Mermaid.js instead.**
+
+---
 
 ## Report Sections
 
@@ -171,6 +225,9 @@ For each pathway:
 - **7 Rs Classification:** Classification (with brief description)
 - **Gartner TIME:** Classification
 
+**Pathway Theme:**
+A paragraph (3-5 sentences) describing the overall philosophy and approach of this pathway. Explain what makes this pathway unique, who it's best suited for, and the key trade-offs involved. This should help stakeholders quickly understand the essence of the pathway without reading all the details.
+
 **Strategy Overview:**
 Brief description of the approach.
 
@@ -198,6 +255,14 @@ flowchart LR
 | Phase 1: Name | Low/Medium/High | First | Deliverables |
 | Phase 2: Name | Low/Medium/High | Second | Deliverables |
 
+**Pros and Cons:**
+
+| Pros | Cons |
+|------|------|
+| ✅ Benefit 1 | ❌ Drawback 1 |
+| ✅ Benefit 2 | ❌ Drawback 2 |
+| ✅ Benefit 3 | ❌ Drawback 3 |
+
 **Risk Assessment:**
 - Technical Risk: Level (description)
 - Business Risk: Level (description)
@@ -208,26 +273,54 @@ flowchart LR
 
 ---
 
-### 8. Next Steps
+### 8. Next Steps: Recommended Pathway Implementation
 
-#### Quick Wins Roadmap
+This section details the implementation plan for the **recommended pathway** identified in Section 7. Do NOT include a separate "Quick Wins" section - all implementation details should be based on the recommended pathway phases.
+
+#### Implementation Roadmap
 
 > ⚠️ **Timeline Disclaimer**: The timeline shown in this roadmap is for **indicative conceptual visualization only** and does not represent a precise estimation. Actual timelines can vary significantly based on factors including modernization team experience, project priorities, resource allocation, organizational change management processes, testing requirements, and third-party dependencies.
 
-Use generic week numbers (Week 1, Week 2, etc.) - NO real dates:
+Use generic week numbers (Week 1, Week 2, etc.) - NO real dates. The Gantt chart MUST show:
+- Tasks from the recommended pathway phases
+- Parallel execution where tasks can run concurrently
+- Dependencies between tasks (stacked/sequential where required)
+- Clear visualization of which tasks block others
+
 ```mermaid
 gantt
-    title Quick Wins Roadmap (Indicative Timeline)
+    title Recommended Pathway Implementation (Indicative Timeline)
     dateFormat X
     axisFormat Week %s
     
-    section Category 1
-    Task 1    :a1, 0, 2
-    Task 2    :a2, after a1, 1
+    section Phase 1: [Name]
+    Task 1 (Foundation)           :a1, 0, 2
+    Task 2 (Can run parallel)     :a2, 0, 2
+    Task 3 (Depends on Task 1)    :a3, after a1, 1
     
-    section Category 2
-    Task 3    :b1, 0, 3
+    section Phase 2: [Name]
+    Task 4 (Depends on Phase 1)   :b1, after a3, 3
+    Task 5 (Parallel with Task 4) :b2, after a3, 2
+    Task 6 (Depends on Task 4)    :b3, after b1, 2
+    
+    section Phase 3: [Name]
+    Task 7 (Depends on Phase 2)   :c1, after b3, 2
+    Task 8 (Parallel with Task 7) :c2, after b3, 3
 ```
+
+**Key:** Tasks on the same row starting at the same time run in parallel. Tasks using `after` syntax show dependencies.
+
+#### Phase Breakdown
+
+Detail each phase from the recommended pathway:
+
+| Phase | Key Activities | Complexity | Dependencies | Key Deliverables |
+|-------|---------------|------------|--------------|------------------|
+| Phase 1: [Name] | Activity list | Low/Medium/High | Prerequisites | Deliverables |
+| Phase 2: [Name] | Activity list | Low/Medium/High | Phase 1 completion | Deliverables |
+| Phase 3: [Name] | Activity list | Low/Medium/High | Phase 2 completion | Deliverables |
+
+NO effort estimates in hours/days/weeks.
 
 #### Immediate Actions
 
@@ -235,11 +328,9 @@ gantt
 |--------|-------|------------|--------|
 | Action description | Team/Role | Low/Medium/High | Impact description |
 
-NO effort estimates in hours/days/weeks.
+#### Decision Points & Dependencies
 
-#### Strategic Initiatives
-
-Mermaid flowchart showing decision flow and dependencies.
+Mermaid flowchart showing decision flow and dependencies for the recommended pathway.
 
 #### Recommended Tool Support
 
@@ -258,26 +349,54 @@ Note: For .NET modernization, prefer AWS Transform for Windows Full Stack when b
 
 ### 9. Cost-Benefit Analysis
 
-#### Infrastructure Cost Comparison
+**CRITICAL: This section compares costs BY PATHWAY (Current vs Pathway 1 vs Pathway 2 vs Pathway 3), NOT by component (Database/Compute/Storage). Do NOT create charts showing cost by component.**
 
-Mermaid xychart showing relative costs:
+#### Pathway Cost Comparison
+
+Use a stacked bar chart to compare relative costs across Current state and all pathways. The X-axis MUST be pathways, NOT components. Show BOTH one-time migration costs AND recurring operational costs:
+
 ```mermaid
 xychart-beta
-    title "Relative Monthly Infrastructure Cost"
-    x-axis ["Current", "Option 1", "Option 2", "Option 3"]
-    y-axis "Relative Cost %" 0 --> 100
-    bar [100, 70, 40, 25]
+    title "Relative Cost Comparison by Pathway (Stacked: One-Time + Recurring)"
+    x-axis ["Current", "Pathway 1", "Pathway 2", "Pathway 3"]
+    y-axis "Relative Cost %" 0 --> 150
+    bar "One-Time Migration Cost" [0, 40, 25, 10]
+    bar "Recurring Annual Cost" [100, 35, 55, 90]
 ```
 
-Include configuration legend explaining each option.
+**WRONG (DO NOT DO THIS):**
+```
+x-axis ["Database", "Compute", "Storage", "Network"]  ❌ WRONG - This compares components, not pathways
+```
 
-#### Cost Comparison Table
+**CORRECT:**
+```
+x-axis ["Current", "Pathway 1", "Pathway 2", "Pathway 3"]  ✅ CORRECT - This compares pathways
+```
+
+**Chart Legend:**
+| Pathway | Description | One-Time Cost | Recurring Cost | Total First Year |
+|---------|-------------|---------------|----------------|------------------|
+| Current | Baseline (no migration) | None | 100% (baseline) | 100% |
+| Pathway 1: [Name] | Brief description | Level (X%) | X% of current | X% |
+| Pathway 2: [Name] | Brief description | Level (X%) | X% of current | X% |
+| Pathway 3: [Name] | Brief description | Level (X%) | X% of current | X% |
+
+**Cost Categories Explained:**
+- **One-Time Costs**: Migration effort, tooling, training, testing, deployment, refactoring
+- **Recurring Costs**: Infrastructure, licensing, maintenance, operations, support
+
+#### Detailed Cost Breakdown by Pathway
 
 Use qualitative levels (Low/Medium/High/Very High) - NO dollar amounts:
-| Configuration | Compute | Database | DB Licensing | Container Size | Overall Cost | Savings |
-|--------------|---------|----------|--------------|----------------|--------------|---------|
-| Current | Level | Level | Level | Size | Level | Baseline |
-| Option 1 | Level | Level | Level | Size | Level | Level |
+| Cost Factor | Current | Pathway 1 | Pathway 2 | Pathway 3 |
+|-------------|---------|-----------|-----------|-----------|
+| Compute | Level | Level | Level | Level |
+| Database | Level | Level | Level | Level |
+| Licensing | Level | Level | Level | Level |
+| Migration Effort | N/A | Level | Level | Level |
+| Operational Overhead | Level | Level | Level | Level |
+| **Overall Recurring** | Baseline | X% savings | X% savings | X% savings |
 
 #### Database Migration ROI (if applicable)
 
@@ -348,21 +467,43 @@ Architecture diagrams:
 
 Before completing the report, verify:
 
+**VISUALIZATION (CRITICAL):**
+- [ ] ⛔ NO ASCII ART ANYWHERE - All diagrams use Mermaid.js ONLY (no +, -, |, > box drawings)
+- [ ] At least 6 different Mermaid diagram types included
+- [ ] Current Architecture diagram has color coding with legend
+- [ ] Target Architecture diagram has color coding with legend
+
+**STRUCTURE:**
 - [ ] Professional Advisory Notice at TOP of report (before Executive Summary)
 - [ ] Executive Summary includes feasibility score (X/10), 7Rs, Gartner TIME
 - [ ] Risk of Inaction has Impact rating (High/Medium/Low) AND Probability columns
-- [ ] Current Architecture diagram has color coding with legend
-- [ ] Target Architecture diagram has color coding with legend
-- [ ] At least 6 different Mermaid diagram types included
 - [ ] All proprietary dependencies analyzed with migration examples
 - [ ] Database technology detected and documented
+- [ ] Critical Findings Matrix has 10+ findings
+
+**PATHWAYS:**
 - [ ] Exactly 3 pathways with full detail
-- [ ] Quick Wins Roadmap has timeline disclaimer
+- [ ] Each pathway has a "Pathway Theme" paragraph (3-5 sentences)
+- [ ] Each pathway has a "Pros and Cons" table
+
+**NEXT STEPS:**
+- [ ] NO "Quick Wins" section - implementation is based on recommended pathway only
+- [ ] Next Steps section focuses on recommended pathway implementation
+- [ ] Implementation Roadmap Gantt shows parallel tasks and dependencies
+- [ ] Gantt chart has timeline disclaimer
 - [ ] Gantt chart uses generic weeks (no real dates)
+
+**COST-BENEFIT:**
+- [ ] Cost-Benefit Analysis chart X-axis is PATHWAYS (Current, Pathway 1, 2, 3) NOT components
+- [ ] Cost chart is a STACKED BAR showing BOTH one-time AND recurring costs
+- [ ] Cost-benefit analysis uses qualitative levels (no dollar amounts)
+
+**FORBIDDEN:**
 - [ ] NO effort estimates in hours/days/weeks
 - [ ] NO file counts or line counts
 - [ ] NO Appendix section
-- [ ] Cost-benefit analysis uses qualitative levels (no dollar amounts)
-- [ ] Critical Findings Matrix has 10+ findings
+- [ ] NO ASCII art diagrams
+
+**FINAL:**
 - [ ] Solution Structure Summary is simple (no file/line counts)
 - [ ] Conclusion section present

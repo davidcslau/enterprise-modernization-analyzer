@@ -1,6 +1,5 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: "POWER.md"
+inclusion: always
 ---
 
 # AWS Target Services for Modernization

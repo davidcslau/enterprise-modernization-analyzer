@@ -1,6 +1,5 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: "POWER.md"
+inclusion: always
 ---
 
 # Common Modernization Evaluation Framework
