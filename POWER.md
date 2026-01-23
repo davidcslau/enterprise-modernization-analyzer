@@ -20,7 +20,7 @@ This power provides elite-level enterprise architecture analysis for legacy appl
 | IBM WebSphere | Spring Boot Reactive + AWS | `steering/websphere-to-springboot.md` |
 | Oracle WebLogic | Spring Boot Reactive + AWS | `steering/weblogic-to-springboot.md` |
 
-## Workflow Routing
+## Workflow
 
 ### Step 1: Platform Detection
 
@@ -43,9 +43,9 @@ Scan the codebase to identify the source platform:
 ### Step 2: Load Common Framework
 
 ALWAYS load these steering files for any analysis:
-- `steering/evaluation-framework.md` - Universal evaluation areas
-- `steering/report-structure.md` - Report format standards
-- `steering/aws-target-services.md` - AWS service mappings
+- `steering/common/evaluation-framework.md` - Universal evaluation areas
+- `steering/common/report-structure.md` - **AUTHORITATIVE** report format standards
+- `steering/common/aws-target-services.md` - AWS service mappings
 
 ### Step 3: Execute Platform-Specific Analysis
 
@@ -55,15 +55,13 @@ Follow the loaded platform steering file for:
 - Code transformation examples
 - Platform-specific risks and mitigations
 
-## CRITICAL DIRECTIVES
+## Analysis Methodology
 
-YOU MUST FOLLOW THESE DIRECTIVES FOR EVERY ANALYSIS:
-
-### 1. EXHAUSTIVE ANALYSIS MODE
+### Exhaustive Analysis Mode
 
 Generate the most detailed, comprehensive report possible. Assume the user demands extreme depth - this is $1M/project consulting-grade work.
 
-### 2. INCREMENTAL CODEBASE SCANNING
+### Incremental Codebase Scanning
 
 To avoid context overflow when analyzing large codebases:
 
@@ -89,44 +87,20 @@ To avoid context overflow when analyzing large codebases:
 - Process large codebases in batches of 5-10 files
 - Prioritize: config files → project files → key source → supporting files
 
-### 3. VISUALIZATION MANDATE
-
-BIAS HEAVILY towards Mermaid.js visualizations:
-- Architecture diagrams (current state AND target state)
-- Dependency graphs showing project relationships
-- Quadrant charts for pathway comparison
-- Flowcharts for migration phases
-- Gantt-style diagrams for quick wins
-- XY charts for cost comparisons
-- STRICTLY FORBID ASCII art
-- DO NOT use pie charts for effort distribution - use tables instead
-
-### 4. PROPRIETARY DEPENDENCY DEEP DIVE
-
-For EVERY proprietary/commercial library found:
-- Detailed compatibility assessment table
-- Code migration examples (before/after)
-- Specific mitigation options with effort levels
-
-### 5. COST-BENEFIT ANALYSIS
-
-ALWAYS include infrastructure cost projections with:
-- Current vs modernized cost comparison (Low/Medium/High/Very High)
-- ROI summary (qualitative impact levels)
-- Savings potential assessment
-- Database licensing as primary cost driver (when applicable)
-
-### 6. RISK OF INACTION
-
-For EVERY finding, articulate specific business consequences if not modernized.
-
-### 7. DATABASE DETECTION & MIGRATION ANALYSIS
+### Database Detection
 
 Scan the codebase to identify database technology:
 - SQL Server indicators: connection strings, `SqlConnection`, `SqlCommand`
 - Oracle indicators: `Oracle.DataAccess`, `Oracle.ManagedDataAccess`
 - DB2 indicators: `IBM.Data.DB2`
 - If commercial database detected, prominently recommend Aurora PostgreSQL for cost optimization
+
+### Proprietary Dependency Analysis
+
+For EVERY proprietary/commercial library found:
+- Detailed compatibility assessment table
+- Code migration examples (before/after)
+- Specific mitigation options with effort levels
 
 ## Bundled MCP Server
 
@@ -157,90 +131,8 @@ This power activates when users mention:
 - "WebLogic migration"
 - "J2EE modernization"
 
-## MANDATORY REQUIREMENTS
+## Output
 
-### 1. OUTPUT FILE
+Generate report in `yymmddhhmm_MODERNIZATION_REPORT.md` following the structure defined in `steering/common/report-structure.md`. As for yymmddhhmm, it is the current time's year for yy, month for mm, day for dd, hour for hh and minutes for mm.
 
-Generate report in `MODERNIZATION_REPORT.md`
-
-### 2. PROFESSIONAL ADVISORY NOTICE
-
-The report MUST include this EXACT notice at the very end:
-
-> 📋 **Professional Advisory Notice**: This report provides a high-level technical analysis based on automated codebase scanning and should be interpreted in consultation with AWS Modernization Specialists or authorized AWS Modernization Partners. The findings and recommendations herein are intended to inform strategic planning discussions and should not be acted upon directly without professional guidance. Implementation effectiveness is influenced by numerous factors that cannot be extracted from the codebase alone, including organizational readiness, team dynamics, business constraints, regulatory requirements, and market conditions. We recommend engaging with qualified modernization experts to develop a comprehensive implementation strategy tailored to your specific organizational context.
-
-### 3. EXHAUSTIVE DETAIL
-
-Generate the MOST comprehensive report possible. Include:
-- Every evaluation area with specific findings
-- All proprietary dependencies with detailed analysis
-- Multiple Mermaid diagrams
-- Code migration examples
-- Cost-benefit analysis
-
-### 4. VISUALIZATION HEAVY
-
-Include AT MINIMUM:
-- Current state architecture diagram
-- Target state architecture diagram
-- Pathway comparison quadrant chart
-- Phase flowcharts for each pathway
-- Quick wins gantt diagram
-- Cost comparison chart
-- Dependency graph
-- NO ASCII ART EVER
-
-### 5. PROPRIETARY DEPENDENCY MANDATE
-
-For EACH proprietary/commercial library:
-- Full compatibility table
-- Detailed analysis section with code examples
-- Mitigation options table
-
-### 6. RISK OF INACTION
-
-For EVERY finding, articulate specific business consequences if not modernized.
-
-### 7. STRATEGIC ALIGNMENT
-
-Classify using both:
-- AWS 7 Rs (Rehost, Replatform, Refactor, Repurchase, Retire, Retain, Relocate)
-- Gartner TIME (Tolerate, Invest, Migrate, Eliminate)
-
-### 8. COST ANALYSIS
-
-Include infrastructure cost projections with:
-- Current vs modernized cost levels (Low/Medium/High/Very High)
-- Savings potential assessment
-- ROI summary using qualitative terms
-- Database licensing as primary cost driver
-
-## REPORT STRUCTURE
-
-Follow this exact structure:
-1. Executive Summary (Strategic Verdict table, Key Findings table, Risk of Inaction table)
-2. Visual Architecture State (Current + Target diagrams)
-3. Critical Findings Matrix (detailed table with Impact If Not Modernized column)
-4. Proprietary Dependency Analysis (comprehensive tables + code examples)
-5. Recommended Pathways (3 pathways with quadrant chart, flowcharts, effort tables)
-6. Next Steps (gantt diagram, action tables, tool recommendations)
-7. Cost-Benefit Analysis (cost table, ROI)
-8. Professional Advisory Notice (MUST include the exact hardcoded notice)
-
-## Quality Checklist
-
-Before completing the report, verify:
-
-- [ ] Platform correctly detected (.NET, WebSphere, or WebLogic)
-- [ ] Correct steering file loaded for platform
-- [ ] Executive Summary includes feasibility score, 7Rs, Gartner TIME
-- [ ] At least 6 different Mermaid diagram types included
-- [ ] Current AND Target architecture diagrams present
-- [ ] All proprietary dependencies analyzed
-- [ ] Database technology detected and documented
-- [ ] Exactly 3 pathways with full detail
-- [ ] Cost-benefit analysis included
-- [ ] Critical Findings Matrix has 10+ findings
-- [ ] Risk of Inaction articulated for major findings
-- [ ] Professional Advisory Notice included at end
-- [ ] Report is comprehensive (500+ lines)
+**CRITICAL:** The `steering/common/report-structure.md` file is the SINGLE SOURCE OF TRUTH for all report formatting, section structure, visualization standards, and quality requirements. Do NOT deviate from it.
