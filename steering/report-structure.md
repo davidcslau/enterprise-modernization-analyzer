@@ -12,7 +12,7 @@ This defines the standard report structure for ALL modernization analyses (.NET,
 
 1. **NO dollar amounts by default** - Use qualitative levels (Low/Medium/High/Very High) for cost estimates
 2. **DUAL TIMELINE COMPARISON REQUIRED** - Always show Traditional vs Agentic AI-Accelerated timelines side-by-side to demonstrate the value of AWS Transform and Kiro
-3. **NO real dates** - Gantt charts use generic weeks (Week 1, Week 2, etc.)
+3. **NO real dates** - Gantt charts use generic weeks (Week 1, Week 2, etc.) with `axisFormat Week %S` (uppercase S) and `tickInterval 2`
 4. **NO file counts or line counts** - Solution Structure is simple
 5. **NO Appendix section** - Report ends with Conclusion
 6. **Professional Advisory Notice goes at TOP** - Before Executive Summary, not at the end
@@ -322,11 +322,14 @@ Use generic week numbers (Week 1, Week 2, etc.) - NO real dates. The Gantt chart
 
 **CRITICAL: Use explicit start/end positions, NOT `after` syntax.** The `after` keyword does not render correctly with `dateFormat X`. Always use `:taskId, startWeek, endWeek` format.
 
+**CRITICAL: Use `axisFormat Week %S` (uppercase S), NOT `%s` (lowercase).** Lowercase `%s` causes axis label rendering issues. Always include `tickInterval 2` to prevent label crowding.
+
 ```mermaid
 gantt
     title Recommended Pathway Implementation (Indicative Timeline)
     dateFormat X
-    axisFormat Week %s
+    axisFormat Week %S
+    tickInterval 2
     
     section Phase 1: [Name]
     Task 1 (Foundation)           :a1, 0, 2
@@ -344,6 +347,8 @@ gantt
 ```
 
 **Gantt Chart Syntax Rules:**
+- **MUST use `axisFormat Week %S`** (uppercase S) — lowercase `%s` causes overlapping/garbled axis labels
+- **MUST include `tickInterval 2`** to prevent x-axis label crowding
 - Format: `:taskId, startWeek, endWeek` (e.g., `:a1, 0, 2` means Week 0 to Week 2)
 - Parallel tasks: Same start week (e.g., `:a1, 0, 2` and `:a2, 0, 2`)
 - Sequential tasks: Next task starts where previous ends (e.g., `:a3, 2, 3` follows `:a1, 0, 2`)
@@ -396,7 +401,8 @@ Mermaid flowchart showing decision flow and dependencies for the recommended pat
 gantt
     title Traditional Migration Timeline
     dateFormat X
-    axisFormat Week %s
+    axisFormat Week %S
+    tickInterval 2
     
     section Analysis
     Manual code review           :a1, 0, 2
@@ -427,7 +433,8 @@ gantt
 gantt
     title Agentic AI-Accelerated Timeline
     dateFormat X
-    axisFormat Week %s
+    axisFormat Week %S
+    tickInterval 1
     
     section Phase 1: Foundation
     AWS Transform analysis       :a1, 0, 0.5
@@ -497,6 +504,22 @@ Use qualitative levels (Low/Medium/High/Very High) - NO dollar amounts by defaul
 
 Use a Mermaid Gantt chart to create stacked horizontal bars showing relative year-by-year costs:
 
+**CRITICAL: Bars must be stacked, NOT starting from zero.** Each bar's start position must equal the previous bar's end position within the same section. This creates a visual stacking effect where Year 2 begins where Year 1 ends, and Year 3 begins where Year 2 ends.
+
+✅ **CORRECT** (stacked — each bar starts where previous ends):
+```
+Year 1 - 45     :active, 0, 45
+Year 2 - 25     :crit, 45, 70
+Year 3 - 25     :70, 95
+```
+
+❌ **WRONG** (all bars start from 0 — not stacked):
+```
+Year 1 - 45     :active, 0, 45
+Year 2 - 25     :crit, 0, 25
+Year 3 - 25     :0, 25
+```
+
 ```mermaid
 gantt
     title 3-Year Relative Cost Comparison (Baseline = 100)
@@ -524,6 +547,8 @@ gantt
     Year 2 - 100    :crit, 105, 205
     Year 3 - 100    :205, 305
 ```
+
+**CRITICAL for 3-Year Cost Chart:** This chart uses `axisFormat %s` (lowercase) because the x-axis represents cost units (0-300+), NOT weeks. Do NOT use `%S` (uppercase) here — it caps at 59 and wraps. The stacking is achieved by chaining bar positions: Year 2 starts where Year 1 ends, Year 3 starts where Year 2 ends. Each bar within a section MUST start from the end of the previous bar, NOT from 0.
 
 **Legend:** 🔵 Year 1 (active = blue) | 🔴 Year 2 (crit = red) | 🩵 Year 3 (no status = teal/cyan) — X-axis: Relative cost units (Current annual = 100). Bar length represents cumulative 3-year cost.
 
@@ -682,7 +707,7 @@ Brief summary including:
 2. **Dependency Graphs**: `graph TD` with color-coded styles
 3. **Flowcharts**: `flowchart LR` or `flowchart TB` with subgraphs for phases
 4. **Quadrant Charts**: `quadrantChart` for pathway comparison
-5. **Gantt Charts**: `gantt` for both implementation timelines (dateFormat X, axisFormat Week %s) AND 3-year cost visualization (as horizontal stacked bars)
+5. **Gantt Charts**: `gantt` for both implementation timelines (dateFormat X, axisFormat Week %S, tickInterval 2) AND 3-year cost visualization (as horizontal stacked bars). **MUST use uppercase %S, NOT lowercase %s.**
 
 ### Color Coding Standards
 
