@@ -16,9 +16,10 @@ This power provides elite-level enterprise architecture analysis for legacy appl
 
 | Source Platform | Target Platform | Steering File |
 |-----------------|-----------------|---------------|
-| .NET Framework 4.x | .NET 8 + AWS | `steering/dotnet-to-aws.md` |
-| IBM WebSphere | Spring Boot Reactive + AWS | `steering/websphere-to-springboot.md` |
-| Oracle WebLogic | Spring Boot Reactive + AWS | `steering/weblogic-to-springboot.md` |
+| .NET Framework | .NET 8 + AWS | `steering/dotnet-to-aws.md` |
+| IBM WebSphere | Spring Boot + AWS | `steering/websphere-to-springboot.md` |
+| Oracle WebLogic | Spring Boot + AWS | `steering/weblogic-to-springboot.md` |
+| COBOL/Mainframe | Java Spring Boot + AWS | `steering/cobol-to-java.md` |
 
 ## Workflow
 
