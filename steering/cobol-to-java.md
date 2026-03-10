@@ -881,3 +881,267 @@ For each extracted business rule, assess migration impact to help modernization 
 | EH-001 | RESP code 13 handling | Low | `@ExceptionHandler` | Standard | Direct mapping |
 
 This table connects business logic extraction directly to migration planning, making it actionable for the modernization team.
+
+## Mechanical Data Inventory Extraction
+
+Use targeted regex searches across the entire codebase FIRST, then read specific files only for detail. Every inventory must be cross-referenced against at least two independent sources.
+
+### VSAM File Inventory (must match CSD + LISTCAT + program usage)
+
+**Source 1 — CSD file definitions:** `grepSearch: query="DEFINE FILE" includePattern="**/*.csd"`
+**Source 2 — LISTCAT metadata:** `grepSearch: query="CLUSTER|KEYLEN|AVGLRECL|MAXLRECL|REC-TOTAL" includePattern="**/LISTCAT*"`
+**Source 3 — AIX and PATH:** `grepSearch: query="^0AIX|^0PATH" includePattern="**/LISTCAT*"`
+**Cross-reference:** `grepSearch: query="DATASET|FILE" includePattern="**/*.cbl"`
+
+Completeness check: DEFINE FILE count in CSD must match VSAM clusters in LISTCAT. Every CSD file must appear in at least one program.
+
+Output table (REQUIRED): CICS File | VSAM Dataset | Type | Key Len | Rec Len | Records | Programs | PostgreSQL Target
+
+### Batch Data File Inventory
+
+Scan data directories, cross-reference with JCL DD statements, match to copybook record layouts.
+
+Output table (REQUIRED): File Name | Format | Record Layout Copybook | Record Length | JCL Jobs | PostgreSQL Target
+
+### DB2 Table Inventory (must match DDL + DCL + program SQL)
+
+**Source 1 — DDL:** `grepSearch: query="CREATE TABLE" includePattern="**/*.ddl"`
+**Source 2 — DCL:** `grepSearch: query="EXEC SQL DECLARE.*TABLE" includePattern="**/*.dcl"`
+**Source 3 — Embedded SQL:** `grepSearch: query="EXEC SQL" includePattern="**/*.cbl"`
+**Source 4 — SQL INCLUDE:** `grepSearch: query="EXEC SQL.*INCLUDE" includePattern="**/*.cbl"`
+
+Completeness check: Every DDL table must have a DCL. Every program SQL table must appear in DDL. Every DCL INCLUDE must resolve.
+
+Output table (REQUIRED): Table | Columns | Primary Key | Foreign Keys | DDL File | Programs | SQL Operations
+
+### IMS Database Inventory
+
+Search for: `*.dbd`, `*.psb`, `CBLTDLI|AIBTDLI` in .cbl files.
+
+### MQ Queue Inventory
+
+Search for: `MQGET|MQPUT|MQPUT1|MQOPEN|MQCLOSE` and queue name patterns in .cbl files.
+
+### Exhaustive Copybook Data Type Mapping
+
+Step 1: List ALL copybooks in every cpy directory.
+Step 2: Read EVERY copybook — extract 01-level record, all fields with PIC clauses, all 88-levels, all REDEFINES.
+Step 3: Map EVERY field using conversion table:
+
+| PIC Pattern | PostgreSQL | Java | Notes |
+|-------------|-----------|------|-------|
+| `X(n)` | VARCHAR(n) | String | |
+| `9(1-4)` | SMALLINT | int | |
+| `9(5-9)` | INTEGER | int | |
+| `9(10-18)` | BIGINT | long | |
+| `S9(n)V9(m)` | NUMERIC(n+m,m) | BigDecimal | Financial — CRITICAL |
+| `S9(n) COMP` | INTEGER/BIGINT | int/long | Binary storage |
+| `S9(n) COMP-3` | NUMERIC | BigDecimal | Packed decimal |
+| `X(10)` with DATE in name | DATE | LocalDate | |
+| `X(26)` with TS in name | TIMESTAMP | Instant | |
+
+Step 4: Cross-reference copybooks to programs via `grepSearch: query="COPY " includePattern="**/*.cbl"`.
+
+Completeness check: Every copybook must have a data type mapping table. Every COPY statement must resolve.
+
+Output (REQUIRED): One data type mapping table PER copybook showing every field.
+
+### CICS Transaction Inventory (must match CSD + menu copybooks + programs)
+
+**Source 1 — CSD transactions:** `grepSearch: query="DEFINE TRANSACTION" includePattern="**/*.csd"`
+**Source 2 — CSD programs:** `grepSearch: query="DEFINE PROGRAM" includePattern="**/*.csd"`
+**Source 3 — Menu copybooks:** `grepSearch: query="CDEMO-MENU-OPT|CDEMO-ADMIN-OPT" includePattern="**/*.cpy"`
+**Source 4 — BMS mapsets:** `grepSearch: query="DEFINE MAPSET" includePattern="**/*.csd"`
+
+Output tables (REQUIRED):
+1. Online Transactions: Trans ID | Program | Function | REST API Target
+2. Regular User Menu Options: # | Option | Program | Access Level
+3. Admin Menu Options: # | Option | Program
+4. Batch Programs: Program | Function | Spring Batch Target
+5. Sub-Application Programs: Program | Sub-App | Function
+
+## Mechanical Business Rule Extraction Procedures
+
+The Business Logic Extraction Framework (above) defines 10 categories. This section specifies HOW to mechanically find every rule using codebase-wide searches. Use these searches FIRST, then read surrounding context only where needed.
+
+### Procedure for Input Validation Rules
+
+1. Required fields: `grepSearch: query="= SPACES|= LOW-VALUES|= ZEROS" includePattern="**/*.cbl"`
+2. Numeric validation: `grepSearch: query="IS NOT NUMERIC|IS NUMERIC" includePattern="**/*.cbl"`
+3. Validation flags: `grepSearch: query="88.*FLG-.*VALUE" includePattern="**/*.cbl"`
+4. Range/list validations: `grepSearch: query="VALUES.*THRU|88.*VALUES '" includePattern="**/*.cpy"`
+5. EVALUATE TRUE blocks: `grepSearch: query="EVALUATE TRUE" includePattern="**/*.cbl"` — read 30-50 lines context
+6. Error messages (confirms validations): `grepSearch: query="MOVE '.*' TO WS-MESSAGE|MOVE '.*' TO WS-RETURN-MSG" includePattern="**/*.cbl"`
+
+Completeness: validation rule count must be >= distinct error message count.
+
+### Procedure for Calculation/Processing Rules
+
+1. All arithmetic: `grepSearch: query="COMPUTE |ADD .* TO |SUBTRACT .* FROM |MULTIPLY .* BY |DIVIDE .* BY " includePattern="**/*.cbl"`
+2. Financial fields (CRITICAL): `grepSearch: query="CURR-BAL|CREDIT-LIMIT|TRAN-AMT|INT-RATE|CAT-BAL|PAGE-TOTAL|GRAND-TOTAL" includePattern="**/*.cbl"`
+3. FUNCTION calls: `grepSearch: query="FUNCTION " includePattern="**/*.cbl"`
+4. String operations: `grepSearch: query="STRING |UNSTRING |INSPECT " includePattern="**/*.cbl"`
+5. Report formatting: `grepSearch: query="PIC .*Z.*\\.|PIC \\+|PIC -" includePattern="**/*.cbl"`
+
+Completeness: every COMPUTE/ADD/SUBTRACT/MULTIPLY/DIVIDE must appear as a rule.
+
+### Procedure for Decision/Routing Rules
+
+1. XCTL transfers: `grepSearch: query="XCTL PROGRAM" includePattern="**/*.cbl"`
+2. LINK calls: `grepSearch: query="EXEC CICS LINK" includePattern="**/*.cbl"`
+3. PF key handling: `grepSearch: query="EIBAID|DFHENTER|DFHPF" includePattern="**/*.cbl"`
+4. User type routing: `grepSearch: query="USRTYP-ADMIN|USRTYP-USER|USR-TYPE" includePattern="**/*.cbl"`
+5. Menu option tables: `grepSearch: query="OPT-PGMNAME|OPT-NAME|OPT-COUNT" includePattern="**/*.cpy"`
+
+### Procedure for Data Access Rules
+
+1. All CICS file I/O: `grepSearch: query="EXEC CICS (READ|WRITE|REWRITE|DELETE|STARTBR|READNEXT|READPREV|ENDBR)" includePattern="**/*.cbl"`
+2. All DB2 SQL: `grepSearch: query="EXEC SQL" includePattern="**/*.cbl"`
+3. MQ operations: `grepSearch: query="CALL 'MQ" includePattern="**/*.cbl"`
+4. TD/TS queues: `grepSearch: query="WRITEQ TD|READQ TD|WRITEQ TS|READQ TS" includePattern="**/*.cbl"`
+5. Batch file I/O: `grepSearch: query="OPEN |CLOSE |READ |WRITE " includePattern="**/CB*.cbl"`
+
+### Procedure for Security Rules
+
+1. Password handling: `grepSearch: query="USR-PWD|PASSWORD|PASSWD" includePattern="**/*.cbl"`
+2. User type checks: `grepSearch: query="USRTYP|USR-TYPE|USER-TYPE" includePattern="**/*.cbl"`
+3. Session context: `grepSearch: query="CDEMO-USER-ID|CDEMO-FROM-PROGRAM|CDEMO-TO-PROGRAM" includePattern="**/*.cbl"`
+4. CSD security: `grepSearch: query="RESSEC|CMDSEC" includePattern="**/*.csd"`
+
+### Procedure for Error Handling Rules
+
+1. CICS RESP: `grepSearch: query="RESP\\(|DFHRESP" includePattern="**/*.cbl"`
+2. Error messages: `grepSearch: query="MOVE '.*' TO WS-MESSAGE|MOVE '.*' TO WS-RETURN-MSG|MOVE '.*' TO ERRMSGO" includePattern="**/*.cbl"`
+3. 88-level messages: `grepSearch: query="88.*VALUE$" includePattern="**/*.cbl"`
+4. ABEND handling: `grepSearch: query="HANDLE ABEND|ABEND-CODE" includePattern="**/*.cbl"`
+5. DB2 SQLCODE: `grepSearch: query="SQLCODE|SQLCA" includePattern="**/*.cbl"`
+6. MQ errors: `grepSearch: query="MQ-REASON-CODE|MQ-CONDITION-CODE|MQRC-" includePattern="**/*.cbl"`
+7. Batch file status: `grepSearch: query="FILE-STATUS|STATUS = '00'|STATUS NOT" includePattern="**/*.cbl"`
+
+Completeness: every error message literal must appear as an EH rule.
+
+### Procedure for Batch Processing Rules
+
+1. JCL programs: `grepSearch: query="EXEC PGM=" includePattern="**/*.jcl"`
+2. JCL datasets: `grepSearch: query="DD.*DSN=" includePattern="**/*.jcl"`
+3. Sort/merge: `grepSearch: query="SORT|MERGE|DFSORT" includePattern="**/*.jcl"`
+
+### Expected Rule Counts (Quality Gate)
+
+For a typical COBOL/CICS application (~40 programs, ~30 copybooks, ~40 JCL jobs):
+
+| Category | Expected Minimum | If Below, Re-run Searches |
+|----------|-----------------|--------------------------|
+| Input Validation | 25-40 | Re-scan EVALUATE TRUE blocks and error messages |
+| Calculation/Processing | 10-20 | Re-scan all COMPUTE/ADD/SUBTRACT and financial fields |
+| Decision/Routing | 5-15 | Re-read all menu copybooks and XCTL calls |
+| Data Access | 25-40 | Re-scan all VSAM files x all programs, all DB2 SQL |
+| Security | 3-8 | Re-scan password handling and user type checks |
+| Error Handling | 10-25 | Re-capture all error message literals |
+| **Total** | **80-150** | If total < 80, extraction is incomplete |
+
+## Report Internal Consistency Rules
+
+When generating or editing a COBOL/Mainframe modernization report, every inventory and analysis section MUST be internally consistent, non-contradictory, complete, and explainable. A reader must be able to follow a clear rationale from any summary table to its corresponding detail section without encountering unexplained gaps or mismatched numbers.
+
+### General Business Logic Consistency Principles
+
+1. **Summary-to-Detail Traceability**: Every summary table row MUST have a corresponding detail subsection. Every number in a summary table MUST be verifiable by counting rows in the detail tables.
+2. **No Phantom Categories**: If a summary table lists N categories, there MUST be exactly N detail subsections — no more, no fewer.
+3. **No Phantom Counts**: If a summary table claims X rules/items in a category, the detail subsection MUST contain exactly X rows.
+4. **Consistent Naming**: Category names in summary tables MUST match subsection headings exactly. Do not use "Financial Calculation Rules" in a detail heading if the summary table says "Calculation/Processing".
+5. **Severity Breakdown Verification**: If a summary table has columns for severity levels (Critical/High/Medium/Low), each detail subsection heading MUST declare its breakdown (e.g., "4 Critical, 10 High, 8 Medium, 6 Low = 28 total") and the individual rule rows MUST include a Severity column so the counts are independently verifiable.
+6. **Cross-Total Verification**: Row totals (Critical+High+Medium+Low) MUST equal the Rule Count column. Column totals MUST equal the Total row. The grand total MUST equal the sum of all category Rule Counts.
+7. **Source Traceability**: Every rule, data access pattern, or inventory item MUST cite a specific source program, copybook, DDL file, or JCL job that can be found in the codebase.
+
+### Business Logic Summary & Key Business Rules Consistency
+
+#### Structure Requirements
+
+- The summary table MUST list ALL categories with columns: Category, Rule Count, Critical, High, Medium, Low.
+- The "Key Business Rules Extracted" section MUST contain one subsection per category row.
+- Each subsection MUST list exactly the number of rules claimed in the summary table for that category.
+- Each rule row MUST have: Rule ID (unique, sequential within category), Severity, description columns, and Source (program name).
+- The severity values in each row MUST match the counts declared in the subsection heading and the summary table.
+
+#### Methodology Note Requirements
+
+- A methodology note MUST explain what was scanned (source file types), what constitutes a "rule", and the total count.
+- The total count in the methodology note MUST match the summary table grand total.
+- Do NOT reference a different number than what the summary table shows.
+
+#### What Counts as a Business Rule
+
+Each rule must be a distinct, identifiable construct from the source code:
+- **Input Validation**: An explicit check (IF/EVALUATE) that rejects or flags invalid input — one rule per distinct validation check.
+- **Calculation/Processing**: An arithmetic operation (ADD, COMPUTE, SUBTRACT) or implied-decimal field definition requiring BigDecimal mapping — one rule per distinct calculation or critical field.
+- **Decision/Routing**: An EVALUATE or IF that determines program flow (XCTL target, menu dispatch, processing branch) — one rule per distinct decision point.
+- **Data Access**: A CICS READ/WRITE/REWRITE/DELETE/STARTBR/READNEXT/READPREV, EXEC SQL, or IMS DL/I call — one rule per distinct file+operation+program combination.
+- **Inter-Program Communication**: An XCTL, MQ call (MQOPEN/MQGET/MQPUT/MQCLOSE), DL/I CALL, TD queue write, or external program CALL — one rule per distinct communication pattern.
+- **Error Handling**: A DFHRESP/SQLCODE/MQRC check with a specific user-facing message or recovery action — one rule per distinct error condition handled.
+- **Screen/Interface**: A BMS SEND/RECEIVE pattern, PF key handler, cursor positioning, or field attribute manipulation — one rule per distinct screen interaction pattern.
+- **Batch Processing**: A batch job's primary processing logic (file scan, report generation, data extract, database load/unload) — one rule per distinct batch function.
+- **Security/Authorization**: An authentication check, access control decision, or credential management operation — one rule per distinct security function.
+- **Temporal/State Management**: A pseudo-conversational state check, change detection comparison, or pagination state tracking — one rule per distinct state management pattern.
+
+### Inventory Consistency Rules
+
+#### VSAM File Inventory
+
+- Every VSAM file referenced in CSD definitions or CICS programs MUST appear in the inventory table.
+- Columns MUST include: CICS File name, VSAM Dataset name, Type (KSDS/AIX/PATH), Key Length, Record Length, Programs that access it, and PostgreSQL target table.
+- The "Programs" column MUST list only programs where the file access is actually coded (EXEC CICS READ/WRITE with that file's DD name).
+- AIX/PATH entries MUST reference their base cluster.
+
+#### DB2 Table Inventory
+
+- Every table referenced in DDL files or EXEC SQL statements MUST appear in the inventory.
+- Columns MUST include: Table name, Column count, Primary Key, Foreign Keys, DDL File, Programs, SQL Operations.
+- The "SQL Operations" column MUST list only operations actually found in the source (SELECT, INSERT, UPDATE, DELETE).
+- The "Programs" column MUST match programs containing EXEC SQL statements referencing that table.
+
+#### IMS Database Inventory
+
+- Every DBD and PSB file in the codebase MUST appear in the inventory.
+- Columns MUST include: DBD name, PSB name(s), Type (HIDAM/HDAM/etc.), Programs, Purpose.
+- Programs listed MUST actually contain DL/I calls referencing those PSBs.
+
+#### MQ Queue Inventory
+
+- Every MQ queue referenced in MQOPEN/MQPUT/MQGET calls MUST appear in the inventory.
+- Columns MUST include: Queue name/purpose, Direction (Input/Output), Programs, Purpose.
+- Programs listed MUST contain the actual MQ API calls.
+
+#### Copybook Data Type Mapping
+
+- Every copybook used in COPY statements across the COBOL programs MUST be considered for inclusion.
+- At minimum, copybooks defining record layouts for VSAM files, DB2 tables, and COMMAREA structures MUST be mapped.
+- Columns MUST include: COBOL Field, PIC Clause, PostgreSQL type, Java type, Notes.
+- Financial fields (PIC S9(n)V99) MUST be flagged as "Financial — CRITICAL" and mapped to BigDecimal.
+- PII fields (SSN, DOB, phone, government ID) MUST be flagged as "PII" or "PII — encrypt".
+
+#### CICS Transaction Inventory
+
+- Every CICS transaction ID defined in CSD files or referenced in RETURN TRANSID statements MUST appear.
+- Online transactions MUST include: Trans ID, Program, Function description, REST API Target.
+- The REST API Target MUST follow consistent naming conventions (e.g., GET/POST/PUT/DELETE /api/resource).
+- Sub-application transactions MUST be listed separately with their sub-app context.
+- Menu option tables MUST match the copybook definitions (COMEN02Y, COADM02Y).
+
+### Report Anti-Patterns to Avoid
+
+1. **Never** list rules in a detail section under a heading labeled "(Critical)" if the section contains rules of mixed severity — use the full breakdown format instead.
+2. **Never** use a category name in a detail heading that doesn't exist in the summary table.
+3. **Never** claim a total of N rules in a methodology note while the summary table shows a different number.
+4. **Never** list only a subset of categories from the summary table in the detail section without explaining why others are omitted.
+5. **Never** list more or fewer rules in a detail subsection than the summary table claims for that category.
+
+## Cross-Reference Validation (Final Quality Gate)
+
+Before finalizing the report, run these validation checks:
+
+1. **Copybook-to-Program Matrix:** Every copybook must be referenced by at least one program. Unreferenced copybooks are dead code.
+2. **File-to-Program Matrix:** Every VSAM file in CSD must be accessed by at least one program. Every DB2 table in DDL must be accessed.
+3. **Transaction-to-Program Matrix:** Every CSD DEFINE TRANSACTION must map to a DEFINE PROGRAM. Every menu option program must exist.
+4. **Data Type Mapping Completeness:** Every .cpy file must have a data type mapping table. Expect 80-120+ fields for a CardDemo-sized app.
+5. **Business Rule Count Validation:** Verify against Expected Rule Counts table. If any category is below minimum, re-run searches.

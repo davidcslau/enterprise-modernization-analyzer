@@ -23,7 +23,8 @@ A Kiro Power that provides enterprise-grade legacy codebase modernization analys
 - **Proprietary Dependency Analysis**: Impact assessment with code migration examples
 - **Active Directory / Windows SSO Detection**: Identifies AD authentication scenarios (Windows SSO vs Forms Auth) as critical migration blockers with scenario-specific modernization approaches
 - **COBOL Modernization**: CICS online, batch processing, DB2, and VSAM migration patterns to Spring Boot with AWS Graviton targeting
-- **COBOL Business Logic Extraction**: Exhaustive line-by-line extraction of business rules from COBOL PROCEDURE DIVISIONs, categorized into 5 rule types: input validation (VR), calculation/processing (PR), decision/routing (DR), data access (DA), and inter-program communication (IC) — each traced to specific paragraph names and code locations
+- **COBOL Business Logic Extraction**: Exhaustive line-by-line extraction of business rules from COBOL PROCEDURE DIVISIONs, categorized into 10 rule types: input validation, calculation/processing, decision/routing, data access, inter-program communication, error handling, screen/interface, batch processing, security/authorization, and temporal/state management — each traced to specific paragraph names and code locations
+- **COBOL Report Internal Consistency**: Built-in consistency rules ensuring summary-to-detail traceability, count verification across business rule categories, inventory completeness for VSAM files, DB2 tables, IMS databases, MQ queues, copybook mappings, and CICS transactions — with anti-pattern detection to prevent mismatched counts or phantom categories
 - **COBOL-Specific Deep Evaluation**: Beyond standard framework areas — assesses reverse engineering readiness, platform-specific compiler behavior (rounding, EBCDIC collation, COMP/COMP-3 layout), undocumented business rules (tribal knowledge), regulatory compliance (SOX, PCI DSS, GDPR, HIPAA), performance/operational baselines, and coexistence/migration strategy with strangler fig architecture diagrams
 - **Database Migration**: SQL Server/Oracle/DB2 → Aurora PostgreSQL recommendations
 - **Strategic Alignment**: AWS 7 Rs and Gartner TIME framework classification
@@ -80,6 +81,7 @@ Activate by mentioning:
 - "COBOL modernization"
 - "mainframe migration"
 - "COBOL to Java"
+- "mainframe to cloud"
 
 ### Example
 
@@ -132,7 +134,8 @@ legacy-app-modernization-analyzer/
     ├── report-structure.md               # Report format standards (AUTHORITATIVE)
     ├── aws-target-services.md            # AWS service mappings
     ├── j2ee-to-springboot-reactive.md    # J2EE migration patterns
-    ├── cobol-to-java-new.md              # COBOL → Java 17+ Spring Boot 3.x
+    ├── cobol-to-java.md                  # COBOL → Java 17+ Spring Boot 3.x (includes mechanical data inventory + internal consistency rules)
+    ├── cobol-analysis-enhancements.md    # COBOL analysis supplements (data extraction, business rules, cross-ref)
     ├── dotnet-to-aws.md                  # .NET → .NET 8 + AWS
     ├── websphere-to-springboot.md        # WebSphere → Spring Boot
     └── weblogic-to-springboot.md         # WebLogic → Spring Boot
