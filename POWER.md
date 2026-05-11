@@ -1,8 +1,8 @@
 ---
 name: "legacy-app-modernization-analyzer"
 displayName: "Legacy App Modernization Analyzer"
-description: "Analyzes legacy enterprise codebases (.NET, WebSphere, WebLogic, COBOL/Mainframe) and generates comprehensive AWS modernization feasibility reports with visual architecture diagrams, dependency analysis, and migration pathways"
-keywords: [".NET", "WebSphere", "WebLogic", "COBOL", "Mainframe", "Spring Boot", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta", "Java"]
+description: "Analyzes legacy enterprise codebases (.NET, WebSphere, WebLogic, COBOL/Mainframe, plain Java on Tomcat/Jetty) and generates comprehensive AWS modernization feasibility reports with visual architecture diagrams, dependency analysis, and migration pathways"
+keywords: [".NET", "WebSphere", "WebLogic", "COBOL", "Mainframe", "Java", "Spring Boot", "Struts", "JSF", "Dropwizard", "Tomcat", "Jetty", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta"]
 version: "2.0.0"
 ---
 
@@ -19,33 +19,44 @@ This power provides elite-level enterprise architecture analysis for legacy appl
 | .NET Framework | .NET 8 + AWS | `steering/dotnet-to-aws.md` |
 | IBM WebSphere | Spring Boot + AWS | `steering/websphere-to-springboot.md` |
 | Oracle WebLogic | Spring Boot + AWS | `steering/weblogic-to-springboot.md` |
+| Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 3.x + Java 17/21 + AWS | `steering/java-to-springboot.md` |
 | COBOL/Mainframe | Java Spring Boot + AWS | `steering/cobol-to-java.md` |
 
 ## Workflow
 
 ### Step 1: Platform Detection
 
-Scan the codebase to identify the source platform:
+Scan the codebase to identify the source platform. **Order matters** — run detectors in this sequence and stop at the first positive match:
 
-**Detect .NET:**
+**1a. Detect .NET:**
 - Look for: `.sln`, `.csproj`, `.vbproj`, `web.config`, `packages.config`, `appsettings.json`
 - If found → Load `steering/dotnet-to-aws.md`
 
-**Detect WebSphere:**
-- Look for: `ibm-web-bnd.xml`, `ibm-web-ext.xml`, `ibm-application-bnd.xml`, `ibm-ejb-jar-bnd.xml`
-- JAR dependencies: `com.ibm.websphere.*`, `com.ibm.ws.*`, `com.ibm.mq.*`
+**1b. Detect WebSphere:**
+- Look for: `ibm-web-bnd.xml`, `ibm-web-ext.xml`, `ibm-application-bnd.xml`, `ibm-ejb-jar-bnd.xml`, `was.policy`, `server.xml` (Liberty)
+- JAR dependencies: `com.ibm.websphere.*`, `com.ibm.ws.*`, `com.ibm.wsspi.*`, `com.ibm.mq.*`
 - If found → Load `steering/websphere-to-springboot.md`
 
-**Detect WebLogic:**
-- Look for: `weblogic.xml`, `weblogic-application.xml`, `weblogic-ejb-jar.xml`
-- JAR dependencies: `weblogic.*`, `oracle.weblogic.*`, `com.bea.*`
+**1c. Detect WebLogic:**
+- Look for: `weblogic.xml`, `weblogic-application.xml`, `weblogic-ejb-jar.xml`, `plan.xml`, `weblogic-cmp-rdbms-jar.xml`
+- JAR dependencies: `weblogic.*`, `oracle.weblogic.*`, `com.bea.*`, `oracle.toplink.*`
 - If found → Load `steering/weblogic-to-springboot.md`
 
-**Detect COBOL/Mainframe:**
+**1d. Detect Plain Java (non-app-server):**
+- Positive signals: `pom.xml`, `build.gradle`, `build.gradle.kts`, `src/main/java`, `src/main/webapp/WEB-INF/web.xml`, Spring Boot / Spring MVC / Struts / JSF / Dropwizard / Micronaut / Quarkus imports
+- Negative signals (MUST NOT be present — if they are, fall back to WebSphere or WebLogic): any IBM `ibm-*.xml`, `com.ibm.websphere.*` / `com.ibm.ws.*` imports, `weblogic*.xml`, `weblogic.*` / `oracle.weblogic.*` / `com.bea.*` imports
+- If positive signals found AND negative signals absent → Load `steering/java-to-springboot.md`
+
+**1e. Detect COBOL/Mainframe:**
 - Look for: `*.cbl`, `*.cob`, `*.cpy`, `*.CPY`, `*.bms`, `*.BMS`, `*.jcl`, `*.JCL`, `*.csd`
 - Code patterns: `EXEC CICS`, `EXEC SQL`, `WORKING-STORAGE SECTION`, `PROCEDURE DIVISION`
 - If found → Load `steering/cobol-to-java.md`
 - **MANDATORY for COBOL:** Execute the Mechanical Data Inventory Extraction AND Mechanical Business Rule Extraction procedures defined in the steering file. The Business Logic Extraction section with all 10 categories MUST appear in the report. This is not optional — it is the most critical section for COBOL modernization.
+
+**1f. Ambiguous or unmatched cases:**
+- If both Java build files AND WebSphere/WebLogic markers are present, prefer the app-server guide (it covers the Java fundamentals too)
+- If no platform matches, ask the user to confirm the source platform before proceeding
+- The user may explicitly tell the analyzer which steering file to use (e.g., "treat this as the Java path")
 
 ### Step 2: Load Common Framework
 
@@ -118,7 +129,7 @@ This power includes the `fetch` MCP server (configured in `mcp-config.json`) to 
 ## Prerequisites
 
 - Access to codebase (local or repository)
-- Familiarity with source platform (.NET, WebSphere, or WebLogic)
+- Familiarity with source platform (.NET, WebSphere, WebLogic, plain Java, or COBOL/Mainframe)
 - Understanding of modernization goals (cloud-native, containerization, etc.)
 - Awareness of proprietary/commercial library dependencies
 
@@ -137,6 +148,15 @@ This power activates when users mention:
 - "WebSphere migration"
 - "WebLogic migration"
 - "J2EE modernization"
+- "Java modernization"
+- "Java 8 to 17"
+- "Java 11 to 17"
+- "Java 11 to Spring Boot"
+- "Tomcat to Spring Boot"
+- "Struts to Spring Boot"
+- "JSF to Spring Boot"
+- "Dropwizard to Spring Boot"
+- "javax to jakarta migration"
 - "COBOL modernization"
 - "mainframe migration"
 - "COBOL to Java"

@@ -9,9 +9,10 @@ A Kiro Power that provides enterprise-grade legacy codebase modernization analys
 | .NET Framework | .NET 8 + AWS | Windows-based .NET apps to cross-platform cloud-native | ✅ Stable |
 | IBM WebSphere | Spring Boot + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
 | Oracle WebLogic | Spring Boot + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
+| Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 3.x + Java 17/21 + AWS | Plain Java SE / server-side Java (non-app-server) to Spring Boot 3 on Graviton | 🧪 BETA |
 | COBOL/Mainframe | Java Spring Boot + AWS | CICS online, batch, DB2, VSAM to containerized Java on Graviton | 🧪 BETA |
 
-> **Note**: WebSphere, WebLogic, and COBOL modernization paths are in BETA. While functional, these paths may have limited coverage for some proprietary APIs and edge cases.
+> **Note**: WebSphere, WebLogic, Java, and COBOL modernization paths are in BETA. While functional, these paths may have limited coverage for some proprietary APIs and edge cases.
 
 ## Features
 
@@ -22,6 +23,7 @@ A Kiro Power that provides enterprise-grade legacy codebase modernization analys
 - **Package License Verification**: Queries NuGet/Maven APIs for license validation
 - **Proprietary Dependency Analysis**: Impact assessment with code migration examples
 - **Active Directory / Windows SSO Detection**: Identifies AD authentication scenarios (Windows SSO vs Forms Auth) as critical migration blockers with scenario-specific modernization approaches
+- **Java Modernization (Non-App-Server)**: Covers Java 8/11 → Java 17/21 JDK upgrades, `javax.*` → `jakarta.*` namespace migration, Spring Boot 1.x/2.x → 3.x staircase, Struts/JSF/Dropwizard/Servlet/JSP framework migration, WAR → executable JAR, JDK-internal API (`sun.*`) removal, removed module replacement (`java.xml.bind`, `java.activation`, `java.corba`), Log4j 1.x → Logback, and Java 17-compatibility matrix for common libraries (Hibernate, Spring Security, Jackson, Lombok, Mockito, etc.)
 - **COBOL Modernization**: CICS online, batch processing, DB2, and VSAM migration patterns to Spring Boot with AWS Graviton targeting
 - **COBOL Business Logic Extraction**: Exhaustive line-by-line extraction of business rules from COBOL PROCEDURE DIVISIONs, categorized into 10 rule types: input validation, calculation/processing, decision/routing, data access, inter-program communication, error handling, screen/interface, batch processing, security/authorization, and temporal/state management — each traced to specific paragraph names and code locations
 - **COBOL Report Internal Consistency**: Built-in consistency rules ensuring summary-to-detail traceability, count verification across business rule categories, inventory completeness for VSAM files, DB2 tables, IMS databases, MQ queues, copybook mappings, and CICS transactions — with anti-pattern detection to prevent mismatched counts or phantom categories
@@ -33,8 +35,9 @@ A Kiro Power that provides enterprise-grade legacy codebase modernization analys
 - **Dual Timeline Comparison**: Traditional vs Agentic AI-Accelerated timelines showing the value of AWS Transform + Kiro
 - **Cost-Benefit Analysis**: Qualitative assessments by default (Low/Medium/High/Very High), with optional detailed pricing simulation available on request
 - **Modernization Decision Tree (.NET)**: Visual Mermaid flowchart walking through feasibility checks, platform selection, and architecture decisions with a findings map showing exactly which codebase attributes drove the recommendation
+- **Modernization Decision Tree (Java)**: Visual Mermaid flowchart evaluating JDK version, Spring usage, `javax.*`/`jakarta.*` namespace, removed JDK modules, workload I/O profile, packaging, and ARM64 readiness — producing a findings map that traces each scanned attribute to the recommended Spring Boot 3 target on ECS/EKS (Graviton where supported)
 - **Modernization Decision Tree (COBOL)**: Visual Mermaid flowchart evaluating CICS online, DB2, VSAM, batch jobs, and business logic complexity to determine the optimal migration path to Spring Boot 3.x + Java 17 on ECS Fargate/Graviton, with a findings map documenting what was scanned and discovered
-- **Hybrid Modernization Pattern**: Automatically detects un-modernizable dependencies (e.g., Crystal Reports, COM components, deprecated J2EE libraries) and recommends a Legacy Component Isolation architecture with EC2 sidecar + API wrappers alongside the modernized stack
+- **Hybrid Modernization Pattern**: Automatically detects un-modernizable dependencies (e.g., Crystal Reports, COM components, deprecated J2EE libraries, Java 8-only SDKs, JDK-internal APIs) and recommends a Legacy Component Isolation architecture with EC2 sidecar + API wrappers alongside the modernized stack
 
 ## Platform Detection
 
@@ -57,6 +60,12 @@ The analyzer automatically detects your source platform:
 - Files: `weblogic.xml`, `weblogic-application.xml`, `weblogic-ejb-jar.xml`
 - Dependencies: `weblogic.*`, `oracle.weblogic.*`, `com.bea.*`
 
+### Plain Java Detection (non-app-server)
+- Positive files: `pom.xml`, `build.gradle`, `build.gradle.kts`, `src/main/java/`, `src/main/webapp/WEB-INF/web.xml`
+- Frameworks detected: Spring Boot (1.x/2.x/3.x), Spring MVC (XML or annotation), Struts 1/2, JSF/Jakarta Faces, Dropwizard, Micronaut, Quarkus, Vaadin, plain Servlet/JSP
+- JDK version signals: `maven.compiler.source/target/release`, Gradle `sourceCompatibility`/`languageVersion`, `.java-version`, `.sdkmanrc`, Dockerfile base image
+- Negative signals (must be absent to confirm this path): any IBM `ibm-*.xml`, `com.ibm.websphere.*` imports, `weblogic*.xml`, `weblogic.*` / `oracle.weblogic.*` / `com.bea.*` imports
+
 ## Prerequisites
 
 - Kiro IDE
@@ -78,6 +87,15 @@ Activate by mentioning:
 - "WebSphere migration"
 - "WebLogic migration"
 - "J2EE modernization"
+- "Java modernization"
+- "Java 8 to 17"
+- "Java 11 to 17"
+- "Java 11 to Spring Boot"
+- "Tomcat to Spring Boot"
+- "Struts to Spring Boot"
+- "JSF to Spring Boot"
+- "Dropwizard to Spring Boot"
+- "javax to jakarta migration"
 - "COBOL modernization"
 - "mainframe migration"
 - "COBOL to Java"
@@ -90,7 +108,7 @@ User: analyze this codebase and generate a modernization report
 ```
 
 The power will:
-1. Detect source platform (.NET, WebSphere, WebLogic, or COBOL)
+1. Detect source platform (.NET, WebSphere, WebLogic, plain Java, or COBOL)
 2. Load platform-specific steering file
 3. Load common framework files (evaluation, report structure, AWS services)
 4. Scan codebase incrementally (context-aware for large projects)
@@ -134,6 +152,7 @@ legacy-app-modernization-analyzer/
     ├── report-structure.md               # Report format standards (AUTHORITATIVE)
     ├── aws-target-services.md            # AWS service mappings
     ├── j2ee-to-springboot-reactive.md    # J2EE migration patterns
+    ├── java-to-springboot.md             # Plain Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard) → Spring Boot 3.x + Java 17/21
     ├── cobol-to-java.md                  # COBOL → Java 17+ Spring Boot 3.x (includes mechanical data inventory + internal consistency rules)
     ├── cobol-analysis-enhancements.md    # COBOL analysis supplements (data extraction, business rules, cross-ref)
     ├── dotnet-to-aws.md                  # .NET → .NET 8 + AWS
