@@ -187,6 +187,19 @@ Database migration scope differs by programme and is **never** assumed in either
 Detect the database, report its footprint, and state the scope question explicitly. See the
 Database Detection section below.
 
+**Real programmes disagree about this, and the analyzer must not flatten the difference.** Two
+patterns are both common and both legitimate:
+
+- Some programmes **exclude** database migration deliberately. The application moves, the database
+  stays, and the target design deliberately avoids database change so that the application migration
+  is the only variable. Recommending an engine change into this scope contradicts the customer's own
+  boundary.
+- Other programmes treat the database as a **full workstream in its own right**, sized separately,
+  often driven by commercial licence elimination.
+
+Ask which applies. Do not infer it from the source platform, from the presence of a commercial
+engine, or from what a previous analysis assumed.
+
 `java-to-springboot.md` deliberately does **not** load `j2ee-to-springboot-reactive.md`: the
 shared module is about replacing application-server constructs (EJB, JTA, vendor JNDI) that a
 plain Tomcat, Jetty or Struts application does not have.

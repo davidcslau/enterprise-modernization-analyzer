@@ -356,19 +356,25 @@ graph TB
 
 ### Oracle Database Options
 
-| Current | Target | Notes |
-|---------|--------|-------|
-| Oracle Database | Amazon RDS Oracle | Lift-and-shift |
-| Oracle Database | Aurora PostgreSQL | Cost optimization (no licensing) |
-| Oracle Coherence | Amazon ElastiCache | Distributed caching |
-| Oracle AQ | Amazon SQS/SNS | Message queuing |
+**Database migration scope must be confirmed before recommending an engine change.** A WebLogic
+application very often sits on Oracle Database, but moving off WebLogic does not imply moving off
+Oracle. Report the footprint, state the scope question, and only then apply an engine-change row.
+
+| Current | Target | Applies when |
+|---------|--------|--------------|
+| Oracle Database | Amazon RDS for Oracle | Database migration **out** of scope — lift-and-shift, no engine change, no data-access rework |
+| Oracle Database | Oracle on Amazon EC2 | Database migration out of scope and RDS feature gaps or licensing arrangements require it |
+| Oracle Database | Aurora PostgreSQL | **Only when migration is confirmed in scope.** A full workstream — load `steering/oracle-to-postgresql.md` |
+| Oracle Coherence | Amazon ElastiCache | Always — Coherence is a WebLogic-adjacent cache with no target equivalent |
+| Oracle AQ | Amazon SQS/SNS | Where AQ is in use. Note that an AQ enqueue participates in the database transaction and an SQS send does not, so this usually introduces the transactional outbox pattern |
 
 ### Oracle License Considerations
 
-- Oracle Database licensing on AWS can be expensive
-- Consider Aurora PostgreSQL for significant cost savings
-- Use AWS SCT for schema conversion
-- Use AWS DMS for data migration
+- Oracle Database licensing is a Very High ongoing cost component, and Enterprise Edition option packs compound it
+- Report this qualitatively as **evidence for the customer's business case** — no dollar amounts, per `report-structure.md`
+- Licence elimination is a legitimate driver, but it is realised only at the end of a substantial conversion workstream. Present the saving and the effort together, never the saving alone
+- Where the customer has confirmed the database stays as it is, the licensing position is still worth stating as context, but **no database migration workstream belongs in any of the three pathways**
+- When migration is confirmed in scope, `steering/oracle-to-postgresql.md` carries the full treatment: PL/SQL inventory, Oracle-specific SQL constructs, proprietary feature mapping, data type decisions, data access impact, SCT/DMS versus manual sizing, and the cutover and downtime approach
 
 ## Validation Criteria
 
