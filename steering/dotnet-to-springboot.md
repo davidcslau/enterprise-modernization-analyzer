@@ -57,10 +57,67 @@ Scan source code for:
 
 ### Target Framework Detection
 
-Extract from `.csproj` files:
-- `<TargetFramework>net48</TargetFramework>` - .NET Framework 4.8
-- `<TargetFramework>net472</TargetFramework>` - .NET Framework 4.7.2
-- `<TargetFramework>net461</TargetFramework>` - .NET Framework 4.6.1
+**Report the exact version per project.** On this path the Framework version does not determine an
+upgrade route — the code is being rewritten in Java either way — but it still tells you how much
+modern C# the codebase uses, which directly affects how mechanical the translation is. A 3.5
+codebase predates generics-heavy idiom, LINQ maturity, `async`/`await` and modern nullable handling,
+so it translates less mechanically than a 4.8 codebase and carries more redesign.
+
+Extract from `.csproj` / `.vbproj`:
+- `<TargetFrameworkVersion>v3.5</TargetFrameworkVersion>` — .NET Framework 3.5 (expect pre-LINQ, pre-async idiom)
+- `<TargetFrameworkVersion>v4.0</TargetFrameworkVersion>` through `v4.5.2` — early 4.x
+- `<TargetFramework>net461</TargetFramework>` — .NET Framework 4.6.1
+- `<TargetFramework>net472</TargetFramework>` — .NET Framework 4.7.2
+- `<TargetFramework>net48</TargetFramework>` — .NET Framework 4.8
+- `<TargetFrameworks>` (plural) — multi-targeting; list every moniker
+
+**Note for this path:** there is no 3 → 4 pre-upgrade step here. That step exists only on the
+.NET → modern .NET route. Do **not** introduce a .NET Framework upgrade as a stage on the way to
+Java — see the prohibition in the Objective section above.
+
+### Application Type Inventory — the Dominant Effort Driver
+
+Application type dominates effort more than size does, and on a cross-language path it also decides
+how much of the work is *translation* versus *redesign*. Inventory every project by type:
+
+| Application type | Detection signals | Character of the Java migration |
+|------------------|-------------------|---------------------------------|
+| **ASP.NET Web Forms** | `.aspx`, `.ascx`, `.master`, `Global.asax`, `System.Web.UI`, ViewState | **Hardest.** No equivalent concept exists in Spring. Every page is a rewrite, and ViewState-dependent behaviour has to be re-modelled explicitly. Pair this with the front-end analysis — it is a front-end rewrite *plus* a logic extraction |
+| **WCF (server-side)** | `System.ServiceModel`, `[ServiceContract]`, `.svc`, `<system.serviceModel>` | **Hardest.** Re-expressed as REST (`@RestController`) or gRPC. Duplex, callback and message-security patterns have no direct Spring equivalent |
+| **ASP.NET MVC 5** | `System.Web.Mvc`, `Controllers/`, `Views/` | Most tractable. Controller and action concepts map onto Spring MVC or WebFlux |
+| **ASP.NET Web API 2** | `System.Web.Http`, `ApiController` | Most tractable, and an existing REST surface means the front end can be migrated independently |
+| **WinForms / WPF** | `System.Windows.Forms`, `System.Xaml`, `.xaml`, `.Designer.cs` | No Java equivalent is being targeted. These become a web front end, which is a full UI redesign, not a translation |
+| **Windows Service** | `ServiceBase`, `System.ServiceProcess` | Becomes a Spring `@Scheduled` component, a worker, or a container task |
+| **Console / scheduled jobs** | `Main()`, Task Scheduler entries, `.bat`/`.cmd` wrappers, `Quartz.NET` | Straightforward as code, but the **scheduling mechanism** needs its own target (EventBridge Scheduler, ECS scheduled task, Spring Scheduling) and lives outside the codebase |
+
+Report per-type counts as **inventory only** — never as an effort figure.
+
+### Primary Language and the VB.NET Split
+
+Detect the language of every project (`.csproj` → C#, `.vbproj` → VB.NET, `.fsproj` → F#) and report
+the split with named projects.
+
+**VB.NET adds material friction on this path in particular.** C# → Java is a well-travelled
+translation with abundant tooling and reference material; VB.NET → Java is not. VB-specific
+constructs — `On Error Resume Next`, late binding, default properties, the `My.*` namespace,
+implicit conversions, 1-based array conventions in older code — have no clean Java equivalent and
+each needs an explicit decision. Where VB.NET is found:
+
+- Name the projects and the approximate share of the codebase
+- Flag it as a distinct finding in section 4, not as a footnote
+- Note that AI-assisted translation quality is lower for VB.NET than for C#, so expect more review
+  and correction cycles per module
+
+### Build Toolchain and Baseline Buildability
+
+- **Visual Studio version** and build mechanism — msbuild, a packaged build, a CI pipeline, or a manual IDE build
+- Project file style (SDK-style vs legacy) and package management (`packages.config` vs `PackageReference`) — both are inputs to the dependency mapping in the NuGet → Maven section
+- **Whether the solution builds today from a clean checkout, and how long a full build takes**
+
+A non-building baseline is a **gating finding** (see `evaluation-framework.md`). On a cross-language
+path it matters even more than usual: without a working baseline there is no way to compare Java
+behaviour against the original, and behavioural equivalence is the only real acceptance criterion a
+cross-language migration has.
 
 ## Analyzer Mission: Risk Surfacing for Spring Boot Migration
 
@@ -372,7 +429,30 @@ When generating the modernization report, include a **Risk Discovery Findings Ma
 | `partial class` | Merge into single class or use composition |
 | `ref` / `out` parameters | Wrapper objects or return types |
 
-### Database Migration (SQL Server → Aurora PostgreSQL)
+### Database Scope — Confirm Before Recommending an Engine Change
+
+**Database migration is a separate decision from the language migration, and it is never assumed.**
+A Java Spring Boot application runs perfectly well against SQL Server over JDBC or R2DBC, so
+choosing Java does **not** imply choosing PostgreSQL. Some programmes deliberately keep the database
+unchanged precisely so that the language migration is the only variable being tested.
+
+**Required sequence:**
+
+1. **Report the SQL Server footprint** — engine version and edition, counts of stored procedures,
+   functions, triggers and SSIS packages, and the current data access technology and version. Do
+   this regardless of scope: logic held in the database limits what can be extracted into a service,
+   and stored procedures carrying domain rules must be either called from Java or reimplemented in it.
+2. **State the scope question explicitly** as an open item for the customer: *is database migration
+   in scope, or does the application stay on SQL Server?*
+3. Only if migration is confirmed in scope, apply the conversion mapping below and treat it as a
+   workstream of its own with its own sizing.
+
+| If the customer confirms | Then |
+|--------------------------|------|
+| Database **stays** on SQL Server | Target RDS for SQL Server or SQL Server on EC2. Use the MS SQL Server Hibernate dialect / R2DBC MSSQL driver. No T-SQL conversion workstream. Stored procedures can be called from Java as-is, which may be the pragmatic choice for high-volume PL/T-SQL |
+| Database **migrates** to PostgreSQL | Aurora PostgreSQL becomes the target, and the T-SQL conversion below applies as an additional workstream alongside the language migration. Note explicitly that this means two simultaneous changes — language and engine — which is a compounding risk worth stating |
+
+### T-SQL to PostgreSQL Conversion (only when database migration is confirmed in scope)
 
 | T-SQL | PostgreSQL | Notes |
 |-------|------------|-------|
@@ -440,6 +520,36 @@ When generating the modernization report, include a **Risk Discovery Findings Ma
 | Microsoft.Extensions.Configuration | Spring Boot @ConfigurationProperties | Config |
 
 ## ⛔ Critical Blockers: Windows-Only Dependencies
+
+### Windows Lock-In — Scan Exhaustively, Report as One Cluster
+
+On this path the target is Linux and Java from the outset, so **every** Windows-bound dependency
+must be resolved — there is no Windows-container interim hop available as there is on the
+.NET → modern .NET route. That makes the completeness of this scan decisive for the whole
+assessment. Treat it as a single findings cluster in section 4, with each item named and located,
+and put the commercial libraries within it into section 5 as well.
+
+| Category | Detection signals | Java-target consequence |
+|----------|-------------------|-------------------------|
+| **COM / COM+ interop** | `<COMReference>`, `[ComImport]`, `Type.GetTypeFromProgID`, `Marshal.*`, `System.EnterpriseServices` | No Java equivalent. Rewrite, eliminate, or isolate behind an API on a Windows host |
+| **P/Invoke / native Windows API** | `[DllImport("kernel32.dll")]`, `user32.dll`, `advapi32.dll`, `gdi32.dll` | Each call site needs a Java equivalent or an abstraction. JNI is a last resort and reintroduces native coupling |
+| **Registry access** | `Microsoft.Win32.Registry`, `RegistryKey` | Becomes Spring configuration, Parameter Store or Secrets Manager |
+| **MSMQ** | `System.Messaging`, `MessageQueue`, `.\private$\` paths | Target SQS, Amazon MQ or Kafka. Message format and ordering guarantees must be re-established explicitly |
+| **IIS modules and handlers** | `<httpModules>`, `<httpHandlers>`, `<modules>`, `<handlers>`, custom `IHttpModule` / `IHttpHandler`, ISAPI filters | Becomes Spring `WebFilter` / `HandlerInterceptor`. Custom modules are routinely missed because they are declared in config rather than called from code |
+| **GAC-installed assemblies** | `<Reference>` with no `HintPath`, `gacutil` in build scripts | The binary may not exist anywhere in the repository. Flag as a supply problem needing customer input, not just a code problem |
+| **`System.Drawing` / GDI+** | `System.Drawing`, `Bitmap`, `Graphics` | See the System.Drawing section below |
+| **Crystal Reports** | `CrystalDecisions.*`, `.rpt` files | No Java equivalent and no Linux version. Candidate for the EC2 legacy sidecar, or a rewrite onto JasperReports or a reporting service |
+| **RDLC / SSRS reporting** | `Microsoft.Reporting.WebForms`, `.rdlc`, `ReportViewer`, SSRS endpoints | Report definitions do not port. Rewrite onto a Java reporting stack, or keep SSRS and call it |
+| **Office interop** | `Microsoft.Office.Interop.*`, `Excel.Application`, `Word.Application` | Replace with Apache POI (Excel/Word) or a document service. Requires no Office installation, which is a genuine improvement |
+| **32-bit-only components** | `<PlatformTarget>x86</PlatformTarget>`, `Prefer32Bit`, 32-bit native DLLs or ODBC/OLEDB drivers | The constraint disappears once the component is replaced, but the replacement must be found first |
+| **Unmanaged DLLs with no source** | Native binaries in `lib/`, `bin/`, `ThirdParty/` with no source or vendor | **Potentially unresolvable.** Flag explicitly as requiring customer confirmation of whether source or a vendor relationship still exists |
+| **UNC shares and local paths** | `\\server\share`, `C:\`, drive-letter paths in code or config | Externalise to S3 or EFS. Path semantics and case sensitivity also change on Linux |
+| **Windows scheduled tasks** | Task Scheduler XML, `schtasks`, `.bat`/`.cmd` wrappers | Lives outside the codebase entirely. Needs an explicit target (EventBridge Scheduler, ECS scheduled task, Spring Scheduling) |
+| **Windows Authentication / AD** | See the section immediately below | Auth rework is routinely the hidden bulk of the effort |
+
+For each item found, report what it is, where it is, why it cannot come to Java/Linux, and the
+replacement or isolation option. Where an item cannot be resolved at all, connect it to the EC2
+legacy sidecar pattern rather than leaving it as an open risk.
 
 ### Windows Authentication / Active Directory
 
