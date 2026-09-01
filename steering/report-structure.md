@@ -23,7 +23,7 @@ This defines the standard report structure for ALL modernization analyses (.NET,
 11. **Pathway Theme required** - Each pathway needs a 3-5 sentence theme paragraph
 12. **Pros and Cons required** - Each pathway needs a pros/cons table
 13. **Parallel tasks in Gantt** - Show concurrent tasks and dependencies clearly
-14. **ABSOLUTELY NO ASCII ART** - ALL diagrams MUST use Mermaid.js syntax ONLY
+14. **ABSOLUTELY NO ASCII ART DIAGRAMS** - ALL diagrams MUST use Mermaid.js syntax ONLY. The single permitted exception is a plain directory/file tree inside a fenced code block (see Visualization Requirements below)
 15. **Visual dot indicators for scoring** - Use ●●●●●●●●●○ (9) format in Pathway Scoring Matrix
 16. **OPTIONAL detailed pricing** - User can request 1,000 vCPU assumption with real AWS HK region pricing (see Section 9 Appendix)
 
@@ -60,6 +60,29 @@ graph TD
 ```
 
 **RULE: If you find yourself typing `+`, `-`, `|`, or `>` characters to draw boxes or arrows, STOP IMMEDIATELY and use Mermaid.js instead.**
+
+### PERMITTED - THE ONE EXCEPTION:
+
+A plain **directory or file tree** inside a fenced code block, using the conventional `├──`, `└──`
+and `│` characters, is permitted:
+
+```
+src/main/java/com/example/
+├── domain/
+├── service/
+└── config/
+```
+
+This is standard notation for showing project structure, not a diagram, and Mermaid renders it
+poorly. **The exception is narrow and does not extend to anything else.** It does NOT permit:
+
+- Architecture, component, flow, sequence, dependency or deployment diagrams — those are Mermaid, always
+- Boxes drawn around text to represent a system, service, host or boundary
+- Arrows between components, in any character form
+- Tables or matrices drawn with `+`, `-` and `|` — use a Markdown table
+
+The distinction is purpose, not characters: a tree showing **where files live** is fine; anything
+depicting **how components relate** must be Mermaid with a colour legend.
 
 ---
 
@@ -731,7 +754,7 @@ Architecture diagrams:
 Before completing the report, verify:
 
 **VISUALIZATION (CRITICAL):**
-- [ ] ⛔ NO ASCII ART ANYWHERE - All diagrams use Mermaid.js ONLY (no +, -, |, > box drawings)
+- [ ] ⛔ NO ASCII ART DIAGRAMS ANYWHERE - All diagrams use Mermaid.js ONLY (no +, -, |, > box drawings). Directory/file trees in fenced code blocks are the one permitted exception
 - [ ] At least 6 different Mermaid diagram types included
 - [ ] Current Architecture diagram has color coding with legend
 - [ ] Target Architecture diagram has color coding with legend

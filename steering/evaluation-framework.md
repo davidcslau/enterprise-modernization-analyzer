@@ -387,7 +387,9 @@ Evaluate return on investment:
 ### Visualization Requirements
 
 - Use Mermaid.js for ALL diagrams
-- NEVER use ASCII art
+- NEVER use ASCII art for diagrams — no boxes drawn around text, no character arrows, no
+  text-based flow or architecture diagrams. A plain directory/file tree inside a fenced code block
+  is the one permitted exception, per `report-structure.md`
 - Include architecture diagrams (current and target state)
 - Include dependency graphs
 - Include migration roadmap visualizations
