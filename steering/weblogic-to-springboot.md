@@ -138,17 +138,28 @@ When this pattern applies, include it as an additional pathway or as a variant o
 
 ## WebLogic-Specific Risks
 
-### Proprietary API Dependencies
+### Proprietary API Dependencies — the #1 Migration Risk
+
+**Proprietary application-server APIs are the single largest migration risk for a J2EE application.**
+Treat this as a **first-class findings cluster in section 5 (Proprietary Dependency Analysis)**,
+cross-referenced from section 4 — never as one summary line. For each API found, report what it is,
+where it is used, why no direct successor exists, and the replacement or isolation option.
 
 | Risk | Mitigation |
 |------|------------|
-| T3/T3S Protocol | Replace with REST/gRPC/RSocket |
+| **T3/T3S Protocol** | Replace with REST/gRPC/RSocket. Every *caller* must change too — report the client-side blast radius, including callers owned by other teams |
 | CommonJ Work Manager | Replace with Reactor Schedulers |
-| WebLogic Timer Service | Replace with Spring scheduling |
+| WebLogic Timer Service | Replace with Spring scheduling, or EventBridge Scheduler for cluster-wide jobs |
 | WebLogic Security APIs | Replace with Spring Security + Cognito |
 | WebLogic JMS Extensions | Replace with Kafka/SQS |
-| Oracle TopLink | Replace with Spring Data R2DBC |
+| Oracle TopLink / EclipseLink | Replace with Spring Data. Note this is a **provider change**, not just a framework change |
 | WLDF | Replace with Actuator + CloudWatch |
+| **`weblogic.jndi.*` and WebLogic-namespaced JNDI** | Replace every lookup with Spring dependency injection plus configuration |
+| **`wlthint3client.jar` / `weblogic-client.jar` on the classpath** | Remove entirely. Its presence indicates T3 client usage somewhere, which the scan must locate |
+| **Oracle ADF** | No successor. Requires a full front-end rewrite — coordinate with `frontend-to-spa.md` |
+| **`weblogic.appc` / appc-compiled artifacts and `plan.xml` overrides** | Deployment-time configuration that must be relocated into `application.yml` and Spring profiles; read it rather than discarding it |
+| **Custom classloader filtering** (`prefer-application-packages` in `weblogic.xml`) | Present specifically to resolve a version conflict. Each entry is a conflict that will resurface on a flat classpath |
+| **Oracle Coherence** | Replace with Amazon ElastiCache via Spring Cache; co-located and transactional cache semantics do not survive |
 
 ### J2EE to Jakarta EE
 
@@ -377,3 +388,9 @@ graph TB
 The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebSphere and WildFly/JBoss EAP migration paths and live in `steering/j2ee-to-springboot-reactive.md`.
 
 That file is dispatched explicitly alongside this one by the dispatch table in **POWER.md Step 2** — it is not transcluded and does not load itself. If it has not been loaded, load it before applying the shared patterns.
+
+It also carries the **Required J2EE / Java Analysis Depth** section — application server version and
+its javax/jakarta position, framework stack and its migration cost, J2EE/Jakarta API usage (including
+EJB 2.x as the hardest single construct), removed-API usage, and libraries reaching into removed JDK
+internals. That depth is **mandatory** for this path and the vendor-specific detection above does not
+replace it.

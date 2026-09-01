@@ -139,7 +139,13 @@ When this pattern applies, include it as an additional pathway or as a variant o
 
 ## WebSphere-Specific Risks
 
-### Proprietary API Dependencies
+### Proprietary API Dependencies — the #1 Migration Risk
+
+**Proprietary application-server APIs are the single largest migration risk for a J2EE application**,
+and WebSphere carries more of them than any other platform on this analyzer's paths. Treat this as a
+**first-class findings cluster in section 5 (Proprietary Dependency Analysis)**, cross-referenced from
+section 4 — never as one summary line. For each API found, report what it is, where it is used, why
+no direct successor exists, and the replacement or isolation option.
 
 | Risk | Mitigation |
 |------|------------|
@@ -149,6 +155,13 @@ When this pattern applies, include it as an additional pathway or as a variant o
 | IIOP Protocol | Replace with REST/gRPC/RSocket |
 | WebSphere MQ Native API | Replace with Kafka/SQS |
 | DynaCache | Replace with Redis reactive |
+| **WebSphere-specific JNDI** (`cell/persistent/...`, `cell/nodes/...`, `local:ejb/...`) | Replace every lookup with Spring dependency injection plus configuration. The cell-relative namespace has no equivalent outside WebSphere |
+| **WebSphere ND cell, node and cluster topology** | ECS/EKS replicas behind an ALB. The cell and deployment-manager concepts disappear entirely, along with any application code that reads them |
+| **`com.ibm.websphere.*` / `com.ibm.ws.*` internals** | Deep server coupling with no portable equivalent; each usage needs individual redesign |
+| **OpenJPA as the JPA provider** | Provider change to Hibernate as well as a move to Spring Data — a larger step than a WildFly application on Hibernate already faces |
+| **Custom shared libraries and isolated classloader policies** | Reconstruct the true dependency set. `PARENT_LAST` classloader policies frequently mask version conflicts that will surface on a flat Spring Boot classpath |
+| **`was.policy` / Java 2 security policy** | Java 2 security is not part of the target model. Each granted permission needs review to establish what it was protecting |
+| **Oracle ADF or other vendor UI frameworks layered on the server** | No successor. Requires a front-end rewrite — coordinate with `frontend-to-spa.md` |
 
 ### J2EE to Jakarta EE
 
@@ -331,3 +344,9 @@ graph TB
 The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebLogic and WildFly/JBoss EAP migration paths and live in `steering/j2ee-to-springboot-reactive.md`.
 
 That file is dispatched explicitly alongside this one by the dispatch table in **POWER.md Step 2** — it is not transcluded and does not load itself. If it has not been loaded, load it before applying the shared patterns.
+
+It also carries the **Required J2EE / Java Analysis Depth** section — application server version and
+its javax/jakarta position, framework stack and its migration cost, J2EE/Jakarta API usage (including
+EJB 2.x as the hardest single construct), removed-API usage, and libraries reaching into removed JDK
+internals. That depth is **mandatory** for this path and the vendor-specific detection above does not
+replace it.

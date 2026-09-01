@@ -15,7 +15,95 @@ inclusion: manual
 
 # J2EE to Spring Boot Reactive Migration - Common Patterns
 
-This steering file contains common migration patterns shared between WebSphere and WebLogic to Spring Boot Reactive migrations.
+This steering file contains common migration patterns shared between the WebSphere, WebLogic and WildFly/JBoss EAP paths to Spring Boot Reactive migrations, together with the J2EE and Java analysis depth required on all three.
+
+## Required J2EE / Java Analysis Depth
+
+**Mandatory for every path that loads this file** — WebSphere, WebLogic and WildFly/JBoss EAP. It
+sits on top of the universal Mandatory Baseline Inventory in `evaluation-framework.md`, and the
+vendor-specific detection in the platform steering file does not replace it.
+
+The plain-Java path (`java-to-springboot.md`) does not load this file and carries its own equivalent
+section.
+
+### Application Server, Version and javax/jakarta Position
+
+Report the server and version precisely, and state its namespace position, because together they
+decide whether a two-step migration is unavoidable:
+
+| Server / container | Namespace | Spring Boot reachable directly |
+|--------------------|-----------|-------------------------------|
+| Tomcat 8.5 / 9.x | `javax.*` | **Spring Boot 2.x only.** Boot 3 requires the namespace migration first |
+| Tomcat 10.0 / 10.1+ | `jakarta.*` | **Spring Boot 3.x enabled** |
+| WildFly 26 and earlier, JBoss EAP 7.x | `javax.*` | Boot 2.x first, or namespace migration as part of the move |
+| WildFly 27+, JBoss EAP 8 | `jakarta.*` | Boot 3.x reachable directly |
+| JBoss AS 5/6, EAP 5/6 | `javax.*`, older EE profile | Furthest away; expect EJB 2.x and legacy security |
+
+**The consequence to state explicitly:** where the application is on `javax.*` and Java 8, the
+realistic route is Java 8 → 17 **then** Spring Boot 2.7 → 3.x, as two distinct stages each with its
+own validation. Where it is already on `jakarta.*` and Java 11+, that two-step is avoidable. This is
+one of the highest-value findings on any Java path — do not leave the reader to infer it.
+
+### Framework Stack and Its Migration Cost
+
+| Current stack | Migration character |
+|---------------|---------------------|
+| **Spring MVC** (already Spring) | **Upgrades most readily.** Often a version and configuration migration rather than a rewrite |
+| **CDI + JAX-RS** (typical modern WildFly) | Translates mechanically — CDI maps onto Spring DI, JAX-RS onto Spring REST |
+| **Struts 1** | End-of-life, no upgrade path. **Full rewrite** of the web layer; Struts 1 Actions and ActionForms have no equivalent |
+| **Struts 2** | No forward path to Spring MVC. Materially more rewriting than Spring MVC, including the interceptor stack and OGNL expressions in views |
+| **JSF** (Facelets, PrimeFaces / RichFaces / IceFaces) | **Materially more rewriting.** The stateful component model and backing-bean lifecycle have no Spring MVC equivalent. Almost always implies a front-end rewrite too |
+| **Plain Servlet/JSP** | Mechanical but pervasive; business logic in scriptlets must be extracted first |
+| **Seam** (older JBoss stack) | End-of-life. Full rewrite; Seam conversations and page-flow have no successor |
+
+### J2EE / Jakarta API Usage
+
+Inventory which APIs are in use and report each with its target:
+
+| API | Target | Migration note |
+|-----|--------|----------------|
+| **EJB 2.x** (home/remote interfaces, `EJBHome`, CMP entity beans, `ejb-jar.xml` deployment) | Spring `@Service` and Spring Data | **Flag as the hardest single construct to migrate.** Home interfaces, CMP entity beans and the container-managed lifecycle have no equivalent and require redesign, not translation |
+| **EJB 3.x** (`@Stateless`, `@Stateful`, `@Singleton`) | Spring `@Service` / `@Component` | Much closer to Spring; largely mechanical for stateless beans |
+| **JMS** | Amazon MQ / SQS / MSK | Destination topology and delivery guarantees must be re-established explicitly |
+| **JPA** | Spring Data JPA or R2DBC | **Direct Spring equivalent.** Provider version upgrade is the main work |
+| **JTA** | Spring `@Transactional` | Single-resource transactions map cleanly; distributed XA needs Saga or Outbox |
+| **JNDI** | Spring dependency injection and configuration | Every lookup becomes an injected bean plus configuration |
+| **JAX-RS** | Spring WebFlux / Spring MVC REST | Annotation-level translation; the API contract is preserved |
+| **JAX-WS / SOAP** | **Needs rework.** Spring WS, Apache CXF, or re-expose as REST | No clean Spring-native equivalent. WSDL contracts and consumers constrain what can change |
+| **CDI** | Spring DI | **Direct Spring equivalent** — the closest mapping in the whole J2EE surface |
+| **JAAS** | Spring Security | Custom login modules are application code and must be rewritten |
+| **JCA resource adapters** | Purpose-built client, or isolate behind an API | Rare but high-effort where present |
+| **JBatch (JSR-352)** | Spring Batch | Concepts map reasonably well |
+
+### Removed-API Usage — Blocks the JDK Upgrade
+
+These were removed in Java 11 (and some in Java 9) and each needs a sourced replacement. Scan for
+them explicitly; they are a common cause of a stalled JDK upgrade:
+
+| Removed API | Replacement |
+|-------------|-------------|
+| `javax.xml.bind.*` (JAXB) | `jakarta.xml.bind` plus a runtime implementation, added as an explicit dependency |
+| `javax.activation.*` | `jakarta.activation` as an explicit dependency |
+| `javax.xml.ws.*` (JAX-WS) | `jakarta.xml.ws` plus an implementation, or migrate off SOAP |
+| CORBA (`javax.rmi.CORBA`, `org.omg.*`) | Removed with no successor. Requires redesign onto REST or gRPC |
+| `javax.transaction.*` (the JDK-bundled subset) | `jakarta.transaction` as an explicit dependency |
+| `sun.*` internal packages (`sun.misc.*`, `sun.security.*`, `com.sun.image.*`) | Supported public API equivalents; each usage needs individual assessment |
+
+### Libraries Reaching Into Removed JDK Internals
+
+Distinct from the above, and easier to miss because the application's own source is clean: a
+**dependency** compiled for Java 8 may itself reach into internals that later JDKs removed or closed
+off.
+
+- `sun.misc.Unsafe` — heavily used by older versions of Netty, Guava, Hibernate, Kryo, Jackson and many caching libraries
+- Reflective access into `java.*` internals — produces illegal-reflective-access warnings on Java 11 and hard failures on Java 17
+- Bytecode manipulation libraries (ASM, cglib, Javassist, ByteBuddy) at versions predating the target JDK's class file format
+- Any library with no release since Java 8's era
+
+**Detection approach:** for every dependency, establish whether a version supporting the target Java
+release exists — that is the concrete question, and it is answerable from the registry. Where no such
+version exists, the dependency becomes a blocking finding for the JDK upgrade, and belongs in
+section 5 alongside the licence analysis.
 
 ## Target Architecture
 
