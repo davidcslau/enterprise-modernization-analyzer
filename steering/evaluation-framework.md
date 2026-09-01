@@ -422,33 +422,43 @@ This pattern applies when the analysis finds dependencies that:
 
 ### Recommended Architecture
 
+```mermaid
+flowchart LR
+    subgraph Modern["Modernized Application — ECS / EKS"]
+        App["Modernized App<br/>(.NET 8 / .NET 10<br/>or Spring Boot)"]
+        Client["API Wrapper / Client"]
+        App --- Client
+    end
+
+    subgraph LegacyHost["Legacy Component Host — EC2"]
+        WrapperSvc["API Wrapper Service<br/>(exposes REST / gRPC)"]
+        Component["Un-modernizable Component<br/>(Crystal Reports, COM,<br/>JAX-RPC, vendor JEE libs)"]
+        WrapperSvc --> Component
+    end
+
+    Client -- "REST / gRPC" --> WrapperSvc
+
+    classDef modern fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000;
+    classDef legacy fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000;
+    classDef boundary fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000;
+
+    class App modern;
+    class Client,WrapperSvc boundary;
+    class Component legacy;
 ```
-┌─────────────────────────────────────┐
-│  Modernized Application             │
-│  (.NET 8 / Spring Boot on ECS/EKS)  │
-│                                     │
-│  ┌─────────────────────────┐        │
-│  │  API Wrapper / Client   │────────┼──── REST/gRPC ────┐
-│  └─────────────────────────┘        │                    │
-└─────────────────────────────────────┘                    │
-                                                           ▼
-                                          ┌────────────────────────────┐
-                                          │  Legacy Component Host     │
-                                          │  (EC2 - Windows/.NET Fwk   │
-                                          │   or EC2 - JEE App Server) │
-                                          │                            │
-                                          │  ┌──────────────────────┐  │
-                                          │  │  API Wrapper Service │  │
-                                          │  │  (exposes REST/gRPC) │  │
-                                          │  └──────┬───────────────┘  │
-                                          │         │                  │
-                                          │  ┌──────▼───────────────┐  │
-                                          │  │  Legacy Component    │  │
-                                          │  │  (Crystal Reports,   │  │
-                                          │  │   COM, JAX-RPC, etc) │  │
-                                          │  └──────────────────────┘  │
-                                          └────────────────────────────┘
-```
+
+**Colour legend:**
+
+| Colour | Meaning |
+|--------|---------|
+| 🟢 Green | Modernized application running on the target platform |
+| 🔵 Blue | API boundary components — the wrapper client and the wrapper service that isolate the legacy dependency |
+| 🔴 Red | The un-modernizable legacy component, retained on a host that can still run it |
+
+The legacy host runs whatever runtime the component requires — Windows Server with .NET Framework for
+COM or Crystal Reports, or a JEE application server for deprecated J2EE libraries. The wrapper service
+is the only thing the modernized application talks to, which is what makes the legacy component
+replaceable later without touching the caller.
 
 ### Implementation Guidance
 

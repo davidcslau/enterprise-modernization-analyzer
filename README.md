@@ -161,27 +161,28 @@ The power will:
 
 ## Output
 
-Report structure is defined by `steering/report-structure.md` (single source of truth):
+Report structure is defined by `steering/report-structure.md` (single source of truth) — **11 numbered sections**:
 
-1. **Professional Advisory Notice** - Consultation disclaimer
-2. **Executive Summary** - Strategic verdict, feasibility score, risk of inaction
-3. **Visual Architecture** - Current and target state diagrams (color-coded)
-4. **Critical Findings Matrix** - 10+ findings with priorities
-5. **Proprietary Dependency Analysis** - License verification, migration examples
-6. **Database Analysis** - Detection and migration opportunity
-7. **Decision Tree Findings Map** (.NET / COBOL) - Node-by-node walkthrough showing scanned attributes, findings, and the recommended target platform/architecture path
-8. **Recommended Pathways** - 3 pathways with:
+1. **Professional Advisory Notice** - Consultation disclaimer directing readers to AWS Modernization Specialists or authorized partners
+2. **Executive Summary** - Strategic verdict, feasibility score, risk of inaction, and stated caveats where gating findings or open questions affect confidence
+3. **Visual Architecture State** - Current and target state diagrams (Mermaid, colour-coded with a legend)
+4. **Critical Findings Matrix** - 10+ findings with priorities, including gating findings in the highest band, the Windows lock-in or proprietary-vendor-API clusters, and open questions requiring customer input
+5. **Proprietary Dependency Analysis** - License verification, target-compatible version availability, migration examples
+6. **Database Analysis & Migration Opportunity** - Footprint, logic held in the database, and the migration scope question stated explicitly
+7. **Recommended Pathways** - Exactly 3 pathways with:
    - Weighted Recommendation Scores (6 factors: Long-term Value, Implementation Risk, Cost Efficiency, Time to Value, Team Readiness, Business Continuity)
    - Visual dot indicator scoring matrix (●●●●●●●●●○ format)
    - Quadrant chart for effort vs value positioning
    - Pros/cons tables and risk assessments
-9. **Next Steps** - Recommended pathway implementation roadmap with:
+8. **Next Steps** - Recommended pathway implementation roadmap with:
    - Dual timeline comparison (Traditional vs Agentic AI-Accelerated)
    - Tool automation impact analysis (AWS Transform, Kiro, SCT, DMS)
    - Timeline reduction metrics (typically 70-80% faster with GenAI tools)
-10. **Cost-Benefit Analysis** - Pathway comparison (qualitative)
-11. **Solution Structure Summary** - Projects and complexity
-12. **Conclusion** - Assessment and success factors
+9. **Cost-Benefit Analysis** - Pathway comparison (qualitative; no dollar amounts by default, with optional detailed pricing simulation on request)
+10. **Solution Structure Summary** - Projects, modules and complexity
+11. **Conclusion** - Assessment and success factors
+
+The **Decision Tree Findings Map** (.NET / Java / COBOL) is a node-by-node walkthrough showing what was scanned, what was found, and the route taken through the decision tree. It is presented within the sections above rather than as a section of its own.
 
 ## Project Structure
 
@@ -199,13 +200,29 @@ legacy-app-modernization-analyzer/
     ├── websphere-to-springboot.md        # WebSphere → Spring Boot
     ├── weblogic-to-springboot.md         # WebLogic → Spring Boot
     ├── java-to-springboot.md             # Plain Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard) → Spring Boot 3.x + Java 17/21
+    ├── wildfly-to-springboot.md          # WildFly / JBoss EAP → Spring Boot
     ├── cobol-to-java.md                  # COBOL → Java 17+ Spring Boot 3.x (mechanical data inventory + internal consistency rules)
-    └── j2ee-to-springboot-reactive.md    # Shared J2EE app-server migration module (EJB, JTA, vendor JNDI)
+    ├── j2ee-to-springboot-reactive.md    # Shared J2EE app-server module (EJB, JTA, vendor JNDI) + required J2EE/Java analysis depth
+    ├── frontend-to-spa.md                # Cross-cutting: current front-end detection and SPA rewrite sizing (React or Vue)
+    └── oracle-to-postgresql.md           # Cross-cutting: Oracle → PostgreSQL workstream (loaded only when in scope)
 ```
 
-> **Steering files referenced by the dispatch table but not yet present on disk** (planned / in progress): `wildfly-to-springboot.md`, `frontend-to-spa.md`, and `oracle-to-postgresql.md`. Paths that depend on these files will fall back to the shared modules until the files are added.
+All 13 steering files are `inclusion: manual` and every one is reachable from the POWER.md Step 2 dispatch table. Nothing loads implicitly, by pattern match, or by transclusion from another steering file.
 
 ## Version History
+
+### v3.0.0 - Six Source Families, Two Dimensions, Questionnaire-Grade Depth
+- Two-dimension analysis model: detected **source** + user-confirmed **target** (target never assumed)
+- **New path**: .NET Framework → Java Spring Boot + SPA (BETA)
+- **New path**: Red Hat WildFly / JBoss EAP → Spring Boot (BETA), with the WildFly-specific effort profile stated rather than the commercial-app-server stereotype applied
+- **New target**: .NET 10 alongside .NET 8, with the support-window consequence surfaced and upgrade paths modelled as `3→10`, `4→10` and `3→4→10`
+- **New cross-cutting dimension**: front-end / SPA rewrite sizing (React or Vue — always your input, never a recommendation), including whether a REST API already exists as the dominant sizing question
+- **New cross-cutting dimension**: Oracle → PostgreSQL as a full workstream, loaded only when you confirm it is in scope
+- **Scope-aware database analysis**: the footprint is reported and the migration scope question asked; no engine change is recommended by default
+- **Questionnaire-grade analysis depth** derived from real customer qualification workbooks: a 16-item mandatory baseline inventory applied on every path, platform-specific depth per path, gating findings that outrank ordinary findings, and an explicit derivable-from-source vs requires-customer-input contract so open questions are named rather than guessed
+- Authoritative steering-file dispatch table; all 13 steering files `inclusion: manual` with no implicit, pattern-matched or transcluded loading
+- Windows containers documented as a lower-risk interim hop, distinct from Linux/Graviton containerization
+- Fixed: duplicated .NET decision-tree section merged into one; ASCII-art architecture diagram in the evaluation framework converted to Mermaid with a colour legend
 
 ### v2.0.0 - Legacy App Modernization Analyzer
 - Two-dimension analysis model: detected **source** + user-confirmed **target** (target never assumed)

@@ -1,9 +1,9 @@
 ---
 name: "legacy-app-modernization-analyzer"
 displayName: "Legacy App Modernization Analyzer"
-description: "Analyzes legacy enterprise codebases (.NET, WebSphere, WebLogic, COBOL/Mainframe, plain Java on Tomcat/Jetty) and generates comprehensive AWS modernization feasibility reports with visual architecture diagrams, dependency analysis, and migration pathways"
-keywords: [".NET", "WebSphere", "WebLogic", "COBOL", "Mainframe", "Java", "Spring Boot", "Struts", "JSF", "Dropwizard", "Tomcat", "Jetty", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta"]
-version: "2.0.0"
+description: "Analyzes legacy enterprise codebases (.NET, IBM WebSphere, Oracle WebLogic, Red Hat WildFly/JBoss EAP, plain Java on Tomcat/Jetty, COBOL/Mainframe) and generates comprehensive AWS modernization feasibility reports. Detects the source platform, confirms the target with you (.NET 8, .NET 10, or Java Spring Boot with a React or Vue SPA), and produces visual architecture diagrams, proprietary dependency analysis, front-end rewrite sizing, scope-aware database analysis including Oracle to PostgreSQL, and ranked migration pathways."
+keywords: [".NET", ".NET 8", ".NET 10", "WebSphere", "WebLogic", "WildFly", "JBoss", "JBoss EAP", "COBOL", "Mainframe", "Java", "Spring Boot", "Struts", "JSF", "Dropwizard", "Tomcat", "Jetty", "React", "Vue", "Vue.js", "SPA", "front-end", "Oracle", "PostgreSQL", "Aurora", "SQL Server", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta", "Graviton"]
+version: "3.0.0"
 ---
 
 # Legacy App Modernization Analyzer
@@ -216,7 +216,9 @@ Follow the loaded platform steering file for:
 
 ### Exhaustive Analysis Mode
 
-Generate the most detailed, comprehensive report possible. Assume the user demands extreme depth - this is $1M/project consulting-grade work.
+Generate the most detailed, comprehensive report possible. Assume the user demands extreme depth — this is enterprise consulting-grade work, and the report should stand up to scrutiny from a modernization specialist reading it cold.
+
+Note that this instruction is about **analytical depth**, not about cost figures. The report itself carries no dollar amounts and no hour or day effort estimates — see `steering/report-structure.md`.
 
 ### Incremental Codebase Scanning
 

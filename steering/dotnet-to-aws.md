@@ -160,12 +160,12 @@ flowchart TD
     ReplaceLibs[Replace/Port Libraries]
     StayFramework3[Stay on .NET Framework<br/>(Dependency Hell)]
 
-    CheckOS{Target OS Supported<br/>by .NET 8?}
+    CheckOS{Target OS Supported<br/>by Modern .NET?}
     UpgradeOS[Upgrade OS]
     StayFramework4[Stay on .NET Framework<br/>(OS Constraint)]
 
     %% Phase 2: Platform Selection
-    MoveModern([Move to Modern .NET / .NET 8])
+    MoveModern([Move to Modern .NET<br/>.NET 8 or .NET 10 per Step 1B])
 
     CheckWinFeat{Needs Windows-Only Features?<br/>(WPF/WinForms, GDI+, Registry,<br/>Win-Specific P/Invoke)}
     TargetWinX86[Target: Windows x86/x64<br/>(No Graviton)]
@@ -237,7 +237,7 @@ When generating the modernization report, include a **Decision Tree Findings Map
 |---------------|-----------------|---------------|--------|
 | Unsupported Tech? | `.csproj` refs, `Global.asax`, code patterns | _(e.g., "WebForms detected: 12 .aspx pages")_ | Yes/No |
 | Tied to Platform? | Project refs, NuGet packages | _(e.g., "No SharePoint/BizTalk dependencies")_ | Yes/No |
-| Critical Libs Missing? | `packages.config`, `.csproj` PackageReference | _(e.g., "All packages have .NET 8 versions")_ | Yes/No |
+| Critical Libs Missing? | `packages.config`, `.csproj` PackageReference | _(e.g., "All packages have versions compatible with the selected target runtime")_ | Yes/No |
 | Target OS Supported? | Runtime dependencies, P/Invoke calls | _(e.g., "No OS-specific constraints")_ | Yes/No |
 | Windows-Only Features? | WPF/WinForms refs, GDI+, Registry calls | _(e.g., "No Windows-only UI frameworks")_ | Yes/No |
 | Windows-Only Native Deps? | COM references, native DLL imports | _(e.g., "No COM interop detected")_ | Yes/No |
@@ -246,107 +246,14 @@ When generating the modernization report, include a **Decision Tree Findings Map
 
 Highlight the path taken through the decision tree by marking the actual route with ✅ and dead-end branches with ❌. This gives readers full transparency into why a specific target platform and architecture was recommended.
 
-## .NET Modernization Decision Tree
+When writing the section up, work node by node:
 
-Use this decision tree as the base logic for the analysis. When generating the report, map actual findings from the codebase scan onto each decision node to show readers exactly which attributes were extracted and how they led to the recommended approach.
+1. **At each decision node**, state what was scanned and what was found — or explicitly not found
+2. **Highlight the path taken** through the tree, based on that evidence
+3. **For blocker nodes** (red in the diagram), explain specifically what was detected and why it blocks, rather than only marking the branch as taken
+4. **For the final target node** (green in the diagram), explain how the cumulative findings led to that target
 
-```mermaid
-flowchart TD
-    %% Nodes
-    Start([Start: .NET Framework 4.8 App])
-
-    %% Phase 1: Feasibility Check
-    CheckTech{Uses Unsupported Tech?<br/>(AppDomains, Remoting, CAS,<br/>WF, COM+, WebForms, WCF-Server)}
-    Redesign[Must Redesign/Replace<br/>Unsupported Components]
-    StayFramework1[Stay on .NET Framework<br/>(Legacy Mode)]
-
-    CheckPlatform{Tied to Platform?<br/>(SharePoint, BizTalk, etc.)}
-    MigratePlatform[Migrate Platform First]
-    StayFramework2[Stay on .NET Framework<br/>(Platform Constraint)]
-
-    CheckLibs{Critical 3rd-Party Libs<br/>Lack Modern .NET Version?}
-    ReplaceLibs[Replace/Port Libraries]
-    StayFramework3[Stay on .NET Framework<br/>(Dependency Hell)]
-
-    CheckOS{Target OS Supported<br/>by .NET 8?}
-    UpgradeOS[Upgrade OS]
-    StayFramework4[Stay on .NET Framework<br/>(OS Constraint)]
-
-    %% Phase 2: Platform Selection
-    MoveModern([Move to Modern .NET / .NET 8])
-
-    CheckWinFeat{Needs Windows-Only Features?<br/>(WPF/WinForms, GDI+, Registry,<br/>Win-Specific P/Invoke)}
-    TargetWinX86[Target: Windows x86/x64<br/>(No Graviton)]
-
-    CheckWinDeps{Has Windows-Only Native Deps?<br/>(COM, win-x64 DLLs)}
-    TargetLinuxCap([Linux Capable])
-
-    %% Phase 3: Architecture Selection
-    CheckArmSupport{All Libs/Agents Support<br/>linux-arm64?}
-    TargetLinuxX86[Target: Linux x86-64<br/>(Step 1)]
-
-    CheckWorkload{CPU-Bound / High Scale?<br/>(Crypto, API, Batch)}
-    TargetGraviton[Target: AWS Graviton / ARM64<br/>(Best Performance/Cost)]
-    TargetLinuxChoice[Choice: Linux x86 OR Graviton<br/>(Based on Ops Preference)]
-
-    %% Edges / Logic Flow
-    Start --> CheckTech
-    CheckTech -- Yes --> Redesign
-    Redesign --> CheckTech
-    CheckTech -- Cannot Fix --> StayFramework1
-    CheckTech -- No --> CheckPlatform
-
-    CheckPlatform -- Yes --> MigratePlatform
-    MigratePlatform --> CheckPlatform
-    CheckPlatform -- Cannot Fix --> StayFramework2
-    CheckPlatform -- No --> CheckLibs
-
-    CheckLibs -- Yes --> ReplaceLibs
-    ReplaceLibs --> CheckLibs
-    CheckLibs -- Cannot Fix --> StayFramework3
-    CheckLibs -- No --> CheckOS
-
-    CheckOS -- No --> UpgradeOS
-    UpgradeOS --> CheckOS
-    CheckOS -- Cannot Upgrade --> StayFramework4
-    CheckOS -- Yes --> MoveModern
-
-    MoveModern --> CheckWinFeat
-    CheckWinFeat -- Yes --> TargetWinX86
-    CheckWinFeat -- No --> CheckWinDeps
-    CheckWinDeps -- Yes --> TargetWinX86
-    CheckWinDeps -- No --> TargetLinuxCap
-
-    TargetLinuxCap --> CheckArmSupport
-    CheckArmSupport -- No --> TargetLinuxX86
-    CheckArmSupport -- Yes --> CheckWorkload
-    CheckWorkload -- Yes --> TargetGraviton
-    CheckWorkload -- No --> TargetLinuxChoice
-
-    %% Styling
-    classDef termination fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef decision fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef process fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:4px;
-    classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px;
-
-    class Start,MoveModern,TargetLinuxCap termination;
-    class CheckTech,CheckPlatform,CheckLibs,CheckOS,CheckWinFeat,CheckWinDeps,CheckArmSupport,CheckWorkload decision;
-    class Redesign,MigratePlatform,ReplaceLibs,UpgradeOS process;
-    class TargetGraviton,TargetWinX86,TargetLinuxX86,TargetLinuxChoice success;
-    class StayFramework1,StayFramework2,StayFramework3,StayFramework4 failure;
-```
-
-### How to Use This Decision Tree in Reports
-
-When generating the modernization report, walk through each decision node and map the actual codebase findings:
-
-1. **At each decision node**, state what was scanned and what was found (or not found)
-2. **Highlight the path taken** through the tree based on evidence
-3. **For blocker nodes** (red), explain specifically what was detected and why it blocks
-4. **For the final target node** (green), explain how the cumulative findings led to this recommendation
-
-This gives readers full traceability from codebase evidence → decision logic → recommended target platform.
+The result should give the reader full traceability from codebase evidence → decision logic → recommended target platform and architecture.
 
 ## Migration Strategy Bank
 
