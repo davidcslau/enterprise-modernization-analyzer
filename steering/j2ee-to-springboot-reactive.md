@@ -1,7 +1,17 @@
 ---
-inclusion: fileMatch
-fileMatchPattern: "**/websphere-to-springboot.md,**/weblogic-to-springboot.md"
+inclusion: manual
 ---
+
+<!--
+  Shared target-architecture module. Dispatched explicitly by the dispatch table
+  in POWER.md Step 2, alongside websphere-to-springboot.md,
+  weblogic-to-springboot.md, wildfly-to-springboot.md or
+  dotnet-to-springboot.md.
+
+  Do NOT switch this file to `always` or to pattern-matched inclusion, and do
+  not pull it in with steering file-reference transclusion. Explicit dispatch
+  from POWER.md Step 2 is the only loading mechanism used by this power.
+-->
 
 # J2EE to Spring Boot Reactive Migration - Common Patterns
 

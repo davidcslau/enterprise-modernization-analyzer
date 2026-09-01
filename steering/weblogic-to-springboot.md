@@ -370,3 +370,10 @@ graph TB
 7. Security implemented with Spring Security Reactive
 8. Container runs on both x86_64 and ARM64 (Graviton)
 9. All tests pass with WebTestClient and StepVerifier
+
+
+## Shared J2EE → Spring Boot Reactive Patterns
+
+The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebSphere and WildFly/JBoss EAP migration paths and live in `steering/j2ee-to-springboot-reactive.md`.
+
+That file is dispatched explicitly alongside this one by the dispatch table in **POWER.md Step 2** — it is not transcluded and does not load itself. If it has not been loaded, load it before applying the shared patterns.

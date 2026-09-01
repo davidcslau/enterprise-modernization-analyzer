@@ -4,6 +4,20 @@ inclusion: manual
 
 # .NET Framework to .NET 8 + AWS Modernization
 
+## Analyzer Mission: Risk Surfacing for .NET 8 Migration
+
+This steering file is loaded when the user has committed to migrating .NET Framework to .NET 8 on AWS. The analyzer's job is to surface every item in the codebase that needs attention before migration begins.
+
+**Focus on these outputs:**
+
+1. **Automation-eligible items** — what AWS Transform for .NET / Windows Full Stack can handle (.NET Framework → .NET 8 porting, EF6 → EF Core)
+2. **Manual-effort items** — what requires human refactoring, redesign, or decision-making (e.g., WCF services, Web Forms pages, Active Directory auth)
+3. **Critical blockers** — APIs removed in .NET 8 that have no direct port (AppDomains, Remoting, CAS, Workflow Foundation, WCF server-side, Web Forms)
+4. **Platform risks** — Windows-only features that block Linux/Graviton deployment (COM, GDI+ limited support, Registry, Windows services)
+5. **Upfront remediation** — changes that should be made in the .NET Framework codebase BEFORE porting starts (removing dead code, extracting platform-specific logic, writing missing tests)
+
+Every finding in the report should answer: "What does the team need to know or do BEFORE they start the .NET 8 port, so the migration doesn't get stuck?"
+
 ## Platform Detection
 
 ### .NET-Specific Files to Detect
