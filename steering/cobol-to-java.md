@@ -173,6 +173,28 @@ When generating the modernization report, include a Decision Tree Findings Map:
 | CICS Temporary Storage | Redis / ElastiCache |
 | CICS Transient Data | Amazon SQS queue |
 
+#### BMS Maps and 3270 Screens → SPA Views
+
+Where a front-end rewrite is in scope, `steering/frontend-to-spa.md` carries the detailed BMS mapping
+treatment and is dispatched alongside this file by POWER.md Step 2. It covers the full
+`DFHMSD` / `DFHMDI` / `DFHMDF` construct mapping, the field and attribute model (`POS`, `LENGTH`,
+`ATTRB`, `PICIN`/`PICOUT`, `COLOR`, `MDT`), the screen flow graph, PF-key conventions, and the
+pseudo-conversational state model.
+
+Apply it rather than improvising a screen mapping here. Two points from it are worth repeating because
+they bear directly on the business rule extraction in this file:
+
+- **BMS gives you the field model, not the rules.** Attributes yield the terminal-enforced
+  constraints (numeric-only, length, protected). The substantive validation lives in the
+  `PROCEDURE DIVISION` and must come from the Category 1 extraction below.
+- **Numeric field semantics are a correctness risk.** Implied decimals (`PIC 9(5)V99`), signed
+  overpunch and `COMP-3` packed fields display differently from how they are stored. Carrying these
+  across incorrectly produces silently wrong values in the new UI.
+
+Where the user selected **backend-only** in POWER.md Step 1B, `frontend-to-spa.md` is not loaded and
+the target is an API surface with no UI rewrite in scope. In that case, report the BMS map inventory
+as part of the interface inventory and note that screen replacement is out of scope.
+
 ### Data Access Migration
 
 | COBOL/Mainframe Data | Java/AWS Target | Migration Approach |
@@ -536,6 +558,138 @@ graph TB
 - For database migration (DB2 to Aurora PostgreSQL): Use SCT + DMS
 - For incremental migration with AI assistance: Use Kiro throughout
 
+
+## Required Mainframe Analysis Depth
+
+The universal Mandatory Baseline Inventory in `evaluation-framework.md` applies to this path too, but
+several of its items have mainframe-specific equivalents. Map them as follows — these are the
+mainframe answers to the same questions asked on every other path.
+
+### M1. COBOL Dialect and Compiler (maps to B1, runtime version and vendor)
+
+Reporting "COBOL" is not sufficient. The dialect and compiler determine which language features are
+available, how arithmetic and collation behave, and what a target Java implementation must reproduce.
+
+| What to establish | Detection signals |
+|-------------------|-------------------|
+| **Compiler and version** | `PROCESS`/`CBL` statement options in source, compile JCL `PARM=` options, `//SYSIN` compiler steps, listing headers, build procedure members |
+| **IBM Enterprise COBOL** (and version) | `PROCESS` options such as `ARITH(EXTEND)`, `TRUNC(BIN)`, `DYNAM`, `NUMPROC`; IBM-specific intrinsic functions |
+| **IBM COBOL II / OS/VS COBOL** (pre-Enterprise) | `GOBACK` conventions, absence of Enterprise-only constructs, very old copybook idiom. Signals an older codebase with more constrained language features |
+| **Micro Focus COBOL** | Micro Focus directives, `$SET` statements, non-IBM file handling syntax |
+| **GnuCOBOL** | `>>SOURCE` directives, GnuCOBOL-specific extensions |
+| **Dialect-specific extensions in use** | Vendor intrinsic functions, non-standard `EXEC` statements, vendor-specific file organisations |
+
+**Compiler options are behaviour, not build trivia.** `TRUNC(BIN)` versus `TRUNC(STD)` changes binary
+field truncation, `ARITH(EXTEND)` changes decimal precision limits, and `NUMPROC(PFD)` changes how
+invalid numeric data is handled. Report the options found, because a Java reimplementation must match
+the arithmetic the current system actually performs. This connects to the Platform-Specific Compiler
+Behavior section below.
+
+### M2. CICS Coupling Depth (maps to B4 and B10, where logic lives and where the seams are)
+
+Establish **how deeply** the business logic is entangled with CICS, not merely whether CICS is
+present. This determines how much of each program is reusable logic versus transaction-monitor
+plumbing.
+
+| Coupling level | Indicators | Consequence |
+|----------------|-----------|-------------|
+| **Deeply coupled** | `EXEC CICS` statements interleaved throughout the `PROCEDURE DIVISION`; business rules inside screen-handling paragraphs; `EIBAID` / `EIBCALEN` checks driving business decisions; COMMAREA layout carrying domain state | Logic must be separated from transaction handling before it can be reimplemented. The extraction workstream is large |
+| **Moderately coupled** | CICS confined to identifiable send/receive and file paragraphs, with `PERFORM`ed logic paragraphs that are largely CICS-free | Clear seams exist. Logic paragraphs translate more directly |
+| **Lightly coupled** | Business logic in separate `CALL`ed subprograms with no CICS statements, driven by a thin CICS shell | The best case. The subprograms are close to portable logic already |
+| **Batch-only (no CICS)** | No `EXEC CICS` anywhere | Different profile entirely — see M4 |
+
+Quantify it: count `EXEC CICS` statements, the programs containing them, and the ratio of CICS
+statements to total procedural statements per program. Identify programs that are **pure logic**
+(no CICS, no SQL, no file I/O) — those are the cleanest migration candidates and the natural first
+targets.
+
+Also establish:
+- **Pseudo-conversational state**: what the COMMAREA and CICS Temporary Storage carry between screens. This is the mainframe session state, and it maps onto B8
+- **`XCTL` / `LINK` chains**: the call graph, and how deep it goes. Long chains mean transaction boundaries that are not obvious from any single program
+- **Transaction definitions**: `.csd` entries linking TRANSID to program and mapset
+
+### M3. DB2 vs VSAM Split (maps to B7, data access technology)
+
+Report the split explicitly with counts, because the two carry very different migration
+characteristics and most estates have both.
+
+| Data store | Detection | Migration character |
+|------------|-----------|---------------------|
+| **DB2** | `EXEC SQL` blocks, `DCLGEN` copybooks, `SQLCA`, `INCLUDE SQLCA`, DBRM/bind JCL, plan and package names | **The more tractable half.** Relational structure already exists, SQL is largely portable, and referential integrity is declared. Conversion targets a relational engine |
+| **VSAM (KSDS)** | `ORGANIZATION INDEXED`, `RECORD KEY`, `SELECT ... ASSIGN TO`, IDCAMS `DEFINE CLUSTER` | **The harder half.** No schema beyond the copybook, keys and access paths implied by code, and no referential integrity. The relational model must be *designed* from the copybook and the access patterns |
+| **VSAM (ESDS / RRDS)** | `ORGANIZATION SEQUENTIAL` / `RELATIVE`, relative record access | Harder again — record position may itself be meaningful |
+| **Flat / sequential (QSAM)** | `ORGANIZATION SEQUENTIAL`, GDG references in JCL | Often interchange files rather than a data store. Frequently become S3 objects |
+| **IMS DB** | `DL/I` calls, `CBLTDLI`, PSB/DBD references | Hierarchical model requiring redesign to relational |
+
+Quantify: number of DB2 tables referenced, number of VSAM files, and which programs touch which. Then
+report the **proportion of business data** in each. An estate that is 90% DB2 is a materially different
+data migration from one that is 90% VSAM, and averaging the two hides the risk.
+
+Additionally flag:
+- **Copybooks as the only schema** for VSAM files — and any file whose copybook has `REDEFINES`, meaning one physical record carries several logical layouts distinguished by a type field. These need untangling before a relational design is possible
+- **Files shared between programs** with different copybook views of the same record — a strong signal of drift
+- **`COMP-3` packed decimal and signed overpunch fields**, which need explicit conversion rules
+- **Date representations**: 6-digit dates, Julian dates, and any windowing logic for two-digit years
+
+Database migration scope for this path follows the same rule as every other: report the footprint and
+state the scope question. Mainframe data migration is nearly always in scope because the platform
+itself is being left, but confirm rather than assume, and note where a customer intends to keep DB2
+running (for example on a co-existence timeline) as that changes the target design.
+
+### M4. JCL and Scheduler Coupling (maps to B12, deployment artifact, and B9, integrations)
+
+Batch orchestration lives outside the COBOL source, so it is easy to under-report and then discover
+late. Inventory it as a first-class part of the application.
+
+| What to establish | Detection signals |
+|-------------------|-------------------|
+| **JCL job inventory** | `.jcl` members, `//JOB` cards, PROC and INCLUDE members |
+| **Job step structure** | `//EXEC PGM=`, `//EXEC PROC=`, step dependencies, `COND=` and `IF/THEN/ELSE` conditional execution |
+| **Dataset flow between steps** | `//DD` statements, temporary datasets (`&&TEMP`), GDG generations (`(+1)`, `(0)`, `(-1)`) |
+| **Utility usage** | `IDCAMS`, `SORT`/`DFSORT`/`SYNCSORT`, `IEBGENER`, `IEFBR14`, `IKJEFT01` — these do real work and each needs a target |
+| **Scheduler** | **Control-M**, CA-7, TWS/IWS/OPC, Zeke, Zena, or JCL-internal chaining. Look for scheduler control statements, job naming conventions and calendar references |
+| **Schedule semantics** | Run calendars, dependencies between jobs, restart and rerun procedures, checkpoint/restart logic |
+| **Cross-system dependencies** | Jobs triggered by or triggering other applications; file arrival triggers; FTP/NDM (Connect:Direct) transfers |
+
+**Report the scheduler explicitly.** The dependency graph held in Control-M or CA-7 **is** the batch
+architecture, and it is not visible in the COBOL or the JCL alone. Its absence from the analysis is a
+gap worth naming: state what could be determined from JCL, and flag the scheduler definitions as
+required customer input where they are not available in the repository.
+
+Targets: `SORT` steps become Spring Batch processing or database ordering; GDG generations become
+versioned S3 objects; scheduler dependencies become Step Functions, EventBridge Scheduler or Spring
+Batch job orchestration. **Restart and rerun semantics deserve specific attention** — mainframe batch
+has mature checkpoint/restart behaviour that operations teams rely on, and it does not appear by
+default in a reimplementation.
+
+### M5. Security and Authorization (maps to B6, auth mechanism and blast radius)
+
+The mainframe auth finding is the external security manager, already mapped in the Security Migration
+table above. Establish additionally:
+
+- **Which manager**: RACF, ACF2 or Top Secret, and whether authorization is by user, group or resource profile
+- **CICS transaction-level security**: which TRANSIDs are protected, and by what
+- **Resource-level rules**: dataset profiles, DB2 grants, file-level protections — authorization enforced *outside* the application code, which means it is invisible to a source scan and must be requested
+- **In-program authorization**: user ID or group checks inside the `PROCEDURE DIVISION`. These **are** visible in source and belong in the Category 9 extraction
+- **Blast radius**: how many transactions and jobs depend on the same security definitions, and whether other applications share them
+
+**State plainly that external security manager definitions cannot be derived from source code.**
+Report the in-program checks that are visible, and name the external rules as required customer
+input — this is exactly the derivable-vs-customer-input split from `evaluation-framework.md`.
+
+### M6. Baseline Buildability (maps to B2, build tooling and buildability)
+
+The mainframe equivalent of "does it build from a clean checkout":
+
+- Is the **compile and link JCL** available, along with every PROC and INCLUDE member it references?
+- Are **all copybooks** present, including those referenced indirectly? A missing copybook makes a program uncompilable and its record layouts unknowable
+- Are **DB2 bind and DBRM** steps available for programs with embedded SQL?
+- Is there a **repeatable build** at all, or is compilation a manual per-member activity?
+- Can the application be compiled **outside production** today?
+
+A codebase that cannot be compiled, or whose copybooks are incomplete, is a **gating finding** in the
+same sense as a non-building baseline on any other path: behavioural equivalence cannot be established
+against something that cannot be built or run.
 
 ## COBOL-Specific Evaluation Areas (Beyond Standard Framework)
 

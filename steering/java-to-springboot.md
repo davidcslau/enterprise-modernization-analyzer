@@ -468,6 +468,98 @@ This is a transition state and should be retired in favor of Path A once ops too
 | 8.5.x / 9.x | 3.1 / 4.0 | javax.servlet | Spring Boot 2.x only |
 | 10.0.x / 10.1.x | 5.0 / 6.0 | jakarta.servlet | Spring Boot 3.x |
 
+## Required Java Analysis Depth
+
+This section sits on top of the universal Mandatory Baseline Inventory in
+`evaluation-framework.md`. The plain-Java path does not load
+`j2ee-to-springboot-reactive.md`, so the depth below is carried here.
+
+### JDK Version and Vendor — Both Matter
+
+Report the exact version **and the vendor**, not just "Java 8":
+
+- **Exact version** including patch level where visible: `1.8.0_292`, `11.0.19`, `17.0.8`. Sources: `maven.compiler.source`/`target`/`release`, Gradle `sourceCompatibility` / `languageVersion`, `.java-version`, `.sdkmanrc`, Dockerfile base image, CI pipeline definitions, `MANIFEST.MF` `Build-Jdk`
+- **Vendor**: Oracle JDK, OpenJDK, Amazon Corretto, Eclipse Temurin/AdoptOpenJDK, Azul Zulu, IBM Semeru/J9, Red Hat build of OpenJDK
+
+**Vendor is a finding in its own right.** Oracle JDK licensing changed after Java 8, so an estate on
+Oracle JDK 8 carries a commercial exposure that an OpenJDK or Corretto estate does not. Report the
+position factually as evidence for the customer's business case — no dollar amounts. Note also that
+IBM J9 has different GC and memory behaviour from HotSpot, so tuning and any J9-specific flags do not
+transfer.
+
+Where the build and the runtime disagree on version — a common finding — report both. It usually
+means the deployed artifact is not what the build configuration describes.
+
+### The Two-Step Question — Is It Avoidable?
+
+State this explicitly; it is one of the highest-value findings on any Java path and the reader should
+not have to infer it:
+
+| Starting position | Realistic route |
+|-------------------|-----------------|
+| Java 8 + `javax.*` + Spring 4/5 or non-Spring | **Two steps: Java 8 → 17, then Spring Boot 2.7 → 3.x.** Each stage carries its own validation cycle. Attempting both simultaneously conflates two independent sets of breaking changes |
+| Java 11 + `javax.*` + Spring Boot 2.x | Two steps, but the JDK step is smaller |
+| Java 17 + `javax.*` + Spring Boot 2.7 | One step: the namespace and Boot 3 migration only |
+| Java 17+ + `jakarta.*` | Already positioned for Spring Boot 3 |
+
+Where a two-step is unavoidable, say so plainly and name both stages. Report it as sequencing
+evidence, never as an hour or day figure.
+
+### Framework Stack and Its Relative Migration Cost
+
+The Framework Migration Matrix above gives the target for each source. This is the **cost** dimension,
+which the report must also convey:
+
+| Current stack | Relative migration cost |
+|---------------|------------------------|
+| **Spring MVC** (XML or annotation-configured) | **Upgrades most readily.** Frequently a version and configuration migration rather than a rewrite — the programming model is already Spring's |
+| **Spring Boot 2.x** | Version alignment plus the namespace change |
+| **Plain Servlet/JSP** | Mechanical but pervasive. Business logic in scriptlets must be extracted first — see B4 in `evaluation-framework.md` |
+| **Dropwizard** | Concepts map reasonably; configuration and resource classes are rewritten |
+| **JAX-RS / Jersey standalone** | Annotation-level translation, or keep Jersey transitionally |
+| **Struts 2** | **Materially more rewriting.** No forward path to Spring MVC. The interceptor stack, OGNL expressions in views and ActionSupport idiom all need redesign |
+| **Struts 1** | End-of-life with no upgrade path. **Full rewrite** of the web layer; Actions and ActionForms have no equivalent |
+| **JSF / Jakarta Faces** (Facelets, PrimeFaces / RichFaces / IceFaces) | **Materially more rewriting.** The stateful component model and backing-bean lifecycle have no Spring MVC equivalent, and it almost always implies a front-end rewrite too — coordinate with `frontend-to-spa.md` |
+| **Apache Wicket / Vaadin classic** | Component-oriented models with no Spring MVC equivalent; front-end rewrite likely |
+
+Do not flatten this into "framework migration required". The difference between a Spring MVC upgrade
+and a Struts 1 rewrite is the difference between two very different programmes.
+
+### Java EE API Usage in a Non-App-Server Application
+
+Plain-Java applications frequently use a subset of the Java EE APIs via standalone libraries rather
+than a server. Inventory which are present:
+
+| API | Typical standalone form | Target |
+|-----|------------------------|--------|
+| JPA | Hibernate or EclipseLink with `persistence.xml` | Spring Data JPA — **direct equivalent** |
+| JMS | ActiveMQ, RabbitMQ or MQ client libraries | Amazon MQ / SQS / MSK with `@JmsListener` or a reactive consumer |
+| JTA | Atomikos, Bitronix or Narayana standalone | Spring `@Transactional`; distributed XA needs Saga or Outbox |
+| JNDI | Tomcat `context.xml` resources, `java:comp/env` lookups | Spring configuration and dependency injection |
+| JAX-RS | Jersey or RESTEasy | Spring MVC / WebFlux REST |
+| JAX-WS / SOAP | JAX-WS RI, Apache CXF, Axis | **Needs rework.** Spring WS or CXF on Spring Boot; WSDL contracts constrain what can change |
+| CDI | Weld standalone (uncommon outside a server) | Spring DI — **direct equivalent** |
+| Bean Validation | Hibernate Validator | Same library, `jakarta.validation` namespace |
+| **EJB** | Rare outside an application server. If present, the application is probably not on this path — re-check the detection chain | Spring `@Service`; **EJB 2.x is the hardest single construct to migrate** and requires redesign rather than translation |
+
+### Dependencies Reaching Into Removed JDK Internals
+
+Distinct from the `sun.*` / `com.sun.*` scan above, which covers the application's **own** source.
+This covers the **dependencies**, and it is easier to miss precisely because the application code is
+clean.
+
+A library compiled for Java 8 may itself reach into internals that later JDKs removed or closed:
+
+- **`sun.misc.Unsafe`** — used by older versions of Netty, Guava, Hibernate, Kryo, Jackson, Chronicle and many caching libraries
+- **Reflective access into `java.*` internals** — produces illegal-reflective-access warnings on Java 11 and hard failures on Java 17 unless `--add-opens` is applied, which is a workaround rather than a fix
+- **Bytecode manipulation libraries** — ASM, cglib, Javassist, ByteBuddy at versions predating the target JDK's class file format will fail to read modern classes
+- **Any dependency with no release since the Java 8 era** — a strong signal on its own
+
+**The concrete, answerable question for each dependency is: does a version supporting the target Java
+release exist?** That is verifiable from the registry. Where no such version exists, the dependency is
+a **blocking finding for the JDK upgrade** and belongs in section 5 (Proprietary Dependency Analysis)
+alongside the licence analysis, and in section 4 as a gating item where nothing can proceed without it.
+
 ## Hybrid Modernization: EC2 Legacy Sidecar Pattern
 
 In some cases, components or libraries are tightly coupled to legacy APIs, Java 8 JDK internals, or vendor-specific non-open-source middleware that cannot be cleanly ported. When these components are identified, recommend a hybrid approach:

@@ -2,7 +2,89 @@
 inclusion: manual
 ---
 
-# .NET Framework to .NET 8 + AWS Modernization
+# .NET Framework to .NET 8 / .NET 10 + AWS Modernization
+
+## Analyzer Mission: Risk Surfacing for the .NET Runtime Migration
+
+This steering file is loaded when the user has committed to migrating .NET Framework to modern .NET — **.NET 8 or .NET 10** — on AWS. The analyzer's job is to surface every item in the codebase that needs attention before migration begins.
+
+**Focus on these outputs:**
+
+1. **Automation-eligible items** — what AWS Transform for .NET / Windows Full Stack can handle (.NET Framework → modern .NET porting, EF6 → EF Core)
+2. **Manual-effort items** — what requires human refactoring, redesign, or decision-making (e.g., WCF services, Web Forms pages, Active Directory auth)
+3. **Critical blockers** — APIs removed in modern .NET that have no direct port (AppDomains, Remoting, CAS, Workflow Foundation, WCF server-side, Web Forms)
+4. **Platform risks** — Windows-only features that block Linux/Graviton deployment (COM, GDI+ limited support, Registry, Windows services)
+5. **Upfront remediation** — changes that should be made in the .NET Framework codebase BEFORE porting starts (removing dead code, extracting platform-specific logic, writing missing tests)
+
+Every finding in the report should answer: "What does the team need to know or do BEFORE they start the port, so the migration doesn't get stuck?"
+
+## Target Runtime: .NET 8 or .NET 10
+
+The user selects the target runtime in POWER.md Step 1B. Record which one, and reflect it
+consistently throughout the report — it changes the upgrade path, the tooling support position,
+and the support-window discussion.
+
+**Cover the choice directly rather than defaulting to .NET 8.** Both are LTS releases, and the
+distinction that matters to a modernization programme is the support window relative to the
+programme's own duration:
+
+| Consideration | .NET 8 (LTS) | .NET 10 (LTS) |
+|---------------|--------------|---------------|
+| Support window vs a long programme | Ends **before** a multi-year programme would complete, so a team landing on .NET 8 late in the programme inherits a second upgrade almost immediately | Longer runway; a multi-year effort can land and stay |
+| Transformation tooling maturity | The most travelled path, with the broadest AWS Transform and third-party library coverage | Newer; verify per-dependency support rather than assuming it |
+| Third-party dependency availability | Widest availability of compatible package versions | Most packages that target .NET 8 run on .NET 10, but confirm rather than assume for commercial and native-interop packages |
+| Intermediate-hop cost | Landing on .NET 8 and later moving to .NET 10 is a small step compared with the Framework → modern .NET jump, but it is still a second validation and regression cycle | Avoids the second cycle |
+
+**Report guidance.** State the selected target, then surface the support-window consequence as a
+finding rather than a recommendation: if the programme's own expected duration extends beyond
+.NET 8's support window, that is evidence the customer and their modernization specialists need in
+front of them. Do not choose between .NET 8 and .NET 10 on the customer's behalf, and do not
+present one as the "correct" answer.
+
+## Upgrade Path Modelling: the 3.x Pre-Step
+
+.NET Framework 3.0 and 3.5 cannot be transformed directly to modern .NET by the mainstream
+tooling. They need a **3 → 4 pre-upgrade step** (AWS Transform Custom) before the 4 → 8/10
+transformation can run. Detect the exact Framework version per project and model the path
+explicitly. A solution with mixed project versions may need more than one path in parallel.
+
+| Detected Framework version | Path to model | Notes |
+|---------------------------|---------------|-------|
+| 4.6.1 – 4.8 | `4 → 8` or `4 → 10` | The most direct path. 4.6.1+ ports far more readily than earlier 4.x because of the wider .NET Standard 2.0 surface |
+| 4.0 – 4.5 | `4 → 8` or `4 → 10` | Direct, but expect more API gaps than 4.6.1+ and more manual remediation |
+| 3.0 / 3.5 | `3 → 4 → 8` or `3 → 4 → 10` | The 3 → 4 hop runs first via AWS Transform Custom. Model it as a distinct stage with its own validation |
+
+**Each hop adds transformation-defect surface.** Every transformation stage introduces its own
+crop of AI-generated and tool-generated defects that must be caught and corrected, so a
+`3 → 4 → 10` path carries two defect-capture cycles rather than one. Surface this as a finding
+for any 3.x project detected — it is a material planning input, not a footnote. Report it as
+additional validation and remediation surface, never as an hour or day figure.
+
+**Report guidance.** Name the paths using this notation (`3→10`, `4→10`, `3→4→10`) so the reader
+can see at a glance which projects take the longer route, and state the count of projects on each
+path. Where a 3.x project exists, state plainly that the pre-step is a prerequisite rather than an
+optimisation.
+
+## Containerization Hops: Windows Containers as an Interim Step
+
+Containerization is not a single decision. Distinguish two destinations, because they carry very
+different prerequisites, and the report must not collapse them into one:
+
+| Hop | Prerequisite | What it achieves | What it does not achieve |
+|-----|--------------|------------------|--------------------------|
+| **Windows containers** (ECS/EKS on Windows nodes) | Modern .NET on Windows, or even .NET Framework via Windows Server Core base images. Windows-only dependencies may **remain in place** | Container orchestration, CI/CD integration, horizontal scaling, data-centre exit | No Linux cost profile, no Graviton, larger images, Windows node licensing continues |
+| **Linux containers**, optionally on Graviton/ARM64 | **Complete removal** of every Windows-specific dependency — COM/COM+, P/Invoke into Windows APIs, registry access, Windows Auth, `System.Drawing` on GDI+, Windows-only commercial libraries, 32-bit-only components | Full Linux and Graviton cost and density profile | Requires every item in the Windows lock-in cluster to be resolved first |
+
+**Windows containers are the lower-risk interim hop.** Where the Windows lock-in cluster is
+large, they let a programme reach orchestration, pipeline integration and data-centre exit without
+first resolving every Windows dependency, and then move to Linux later as those dependencies are
+retired. Where the lock-in cluster is empty or trivial, the interim hop adds a stage for no
+benefit.
+
+**Report guidance.** Tie this directly to the Windows lock-in findings: list what specifically
+must be removed before a Linux target is reachable, and present Windows containers as an available
+interim state with its consequences stated. Do not present either as the recommended answer — the
+hosting decision belongs to the customer and their modernization specialists.
 
 ## Platform Detection
 
@@ -35,10 +117,26 @@ Scan source code for:
 
 ### Target Framework Detection
 
-Extract from `.csproj` files:
-- `<TargetFramework>net48</TargetFramework>` - .NET Framework 4.8
-- `<TargetFramework>net6.0</TargetFramework>` - .NET 6
-- `<TargetFramework>net8.0</TargetFramework>` - .NET 8
+**Report the exact version per project, not a range.** The distinction between 3.5, 4.0, 4.6.1
+and 4.8 changes the upgrade path (see Upgrade Path Modelling above), so "legacy .NET Framework" is
+not an acceptable finding.
+
+Extract from `.csproj` / `.vbproj`:
+- `<TargetFrameworkVersion>v3.5</TargetFrameworkVersion>` — .NET Framework 3.5 (**needs the 3 → 4 pre-step**)
+- `<TargetFrameworkVersion>v4.0</TargetFrameworkVersion>` through `v4.5.2` — early 4.x
+- `<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>` through `v4.8.1` — late 4.x, ports most readily
+- `<TargetFramework>net48</TargetFramework>` — .NET Framework 4.8 (SDK-style project)
+- `<TargetFramework>net6.0</TargetFramework>` — .NET 6
+- `<TargetFramework>net8.0</TargetFramework>` — .NET 8
+- `<TargetFramework>net10.0</TargetFramework>` — .NET 10
+- `<TargetFrameworks>` (plural) — multi-targeting; list every framework moniker
+
+Also check `web.config` `<compilation targetFramework="...">` and `<httpRuntime targetFramework="...">`,
+which sometimes disagree with the project file. Where they disagree, report both — it is a sign the
+build and runtime targets have drifted.
+
+**Produce a per-project version table** and use it to drive the upgrade-path modelling. A mixed-version
+solution is a finding in its own right.
 
 ## .NET Modernization Decision Tree
 
@@ -62,12 +160,12 @@ flowchart TD
     ReplaceLibs[Replace/Port Libraries]
     StayFramework3[Stay on .NET Framework<br/>(Dependency Hell)]
 
-    CheckOS{Target OS Supported<br/>by .NET 8?}
+    CheckOS{Target OS Supported<br/>by Modern .NET?}
     UpgradeOS[Upgrade OS]
     StayFramework4[Stay on .NET Framework<br/>(OS Constraint)]
 
     %% Phase 2: Platform Selection
-    MoveModern([Move to Modern .NET / .NET 8])
+    MoveModern([Move to Modern .NET<br/>.NET 8 or .NET 10 per Step 1B])
 
     CheckWinFeat{Needs Windows-Only Features?<br/>(WPF/WinForms, GDI+, Registry,<br/>Win-Specific P/Invoke)}
     TargetWinX86[Target: Windows x86/x64<br/>(No Graviton)]
@@ -139,7 +237,7 @@ When generating the modernization report, include a **Decision Tree Findings Map
 |---------------|-----------------|---------------|--------|
 | Unsupported Tech? | `.csproj` refs, `Global.asax`, code patterns | _(e.g., "WebForms detected: 12 .aspx pages")_ | Yes/No |
 | Tied to Platform? | Project refs, NuGet packages | _(e.g., "No SharePoint/BizTalk dependencies")_ | Yes/No |
-| Critical Libs Missing? | `packages.config`, `.csproj` PackageReference | _(e.g., "All packages have .NET 8 versions")_ | Yes/No |
+| Critical Libs Missing? | `packages.config`, `.csproj` PackageReference | _(e.g., "All packages have versions compatible with the selected target runtime")_ | Yes/No |
 | Target OS Supported? | Runtime dependencies, P/Invoke calls | _(e.g., "No OS-specific constraints")_ | Yes/No |
 | Windows-Only Features? | WPF/WinForms refs, GDI+, Registry calls | _(e.g., "No Windows-only UI frameworks")_ | Yes/No |
 | Windows-Only Native Deps? | COM references, native DLL imports | _(e.g., "No COM interop detected")_ | Yes/No |
@@ -148,107 +246,14 @@ When generating the modernization report, include a **Decision Tree Findings Map
 
 Highlight the path taken through the decision tree by marking the actual route with ✅ and dead-end branches with ❌. This gives readers full transparency into why a specific target platform and architecture was recommended.
 
-## .NET Modernization Decision Tree
+When writing the section up, work node by node:
 
-Use this decision tree as the base logic for the analysis. When generating the report, map actual findings from the codebase scan onto each decision node to show readers exactly which attributes were extracted and how they led to the recommended approach.
+1. **At each decision node**, state what was scanned and what was found — or explicitly not found
+2. **Highlight the path taken** through the tree, based on that evidence
+3. **For blocker nodes** (red in the diagram), explain specifically what was detected and why it blocks, rather than only marking the branch as taken
+4. **For the final target node** (green in the diagram), explain how the cumulative findings led to that target
 
-```mermaid
-flowchart TD
-    %% Nodes
-    Start([Start: .NET Framework 4.8 App])
-
-    %% Phase 1: Feasibility Check
-    CheckTech{Uses Unsupported Tech?<br/>(AppDomains, Remoting, CAS,<br/>WF, COM+, WebForms, WCF-Server)}
-    Redesign[Must Redesign/Replace<br/>Unsupported Components]
-    StayFramework1[Stay on .NET Framework<br/>(Legacy Mode)]
-
-    CheckPlatform{Tied to Platform?<br/>(SharePoint, BizTalk, etc.)}
-    MigratePlatform[Migrate Platform First]
-    StayFramework2[Stay on .NET Framework<br/>(Platform Constraint)]
-
-    CheckLibs{Critical 3rd-Party Libs<br/>Lack Modern .NET Version?}
-    ReplaceLibs[Replace/Port Libraries]
-    StayFramework3[Stay on .NET Framework<br/>(Dependency Hell)]
-
-    CheckOS{Target OS Supported<br/>by .NET 8?}
-    UpgradeOS[Upgrade OS]
-    StayFramework4[Stay on .NET Framework<br/>(OS Constraint)]
-
-    %% Phase 2: Platform Selection
-    MoveModern([Move to Modern .NET / .NET 8])
-
-    CheckWinFeat{Needs Windows-Only Features?<br/>(WPF/WinForms, GDI+, Registry,<br/>Win-Specific P/Invoke)}
-    TargetWinX86[Target: Windows x86/x64<br/>(No Graviton)]
-
-    CheckWinDeps{Has Windows-Only Native Deps?<br/>(COM, win-x64 DLLs)}
-    TargetLinuxCap([Linux Capable])
-
-    %% Phase 3: Architecture Selection
-    CheckArmSupport{All Libs/Agents Support<br/>linux-arm64?}
-    TargetLinuxX86[Target: Linux x86-64<br/>(Step 1)]
-
-    CheckWorkload{CPU-Bound / High Scale?<br/>(Crypto, API, Batch)}
-    TargetGraviton[Target: AWS Graviton / ARM64<br/>(Best Performance/Cost)]
-    TargetLinuxChoice[Choice: Linux x86 OR Graviton<br/>(Based on Ops Preference)]
-
-    %% Edges / Logic Flow
-    Start --> CheckTech
-    CheckTech -- Yes --> Redesign
-    Redesign --> CheckTech
-    CheckTech -- Cannot Fix --> StayFramework1
-    CheckTech -- No --> CheckPlatform
-
-    CheckPlatform -- Yes --> MigratePlatform
-    MigratePlatform --> CheckPlatform
-    CheckPlatform -- Cannot Fix --> StayFramework2
-    CheckPlatform -- No --> CheckLibs
-
-    CheckLibs -- Yes --> ReplaceLibs
-    ReplaceLibs --> CheckLibs
-    CheckLibs -- Cannot Fix --> StayFramework3
-    CheckLibs -- No --> CheckOS
-
-    CheckOS -- No --> UpgradeOS
-    UpgradeOS --> CheckOS
-    CheckOS -- Cannot Upgrade --> StayFramework4
-    CheckOS -- Yes --> MoveModern
-
-    MoveModern --> CheckWinFeat
-    CheckWinFeat -- Yes --> TargetWinX86
-    CheckWinFeat -- No --> CheckWinDeps
-    CheckWinDeps -- Yes --> TargetWinX86
-    CheckWinDeps -- No --> TargetLinuxCap
-
-    TargetLinuxCap --> CheckArmSupport
-    CheckArmSupport -- No --> TargetLinuxX86
-    CheckArmSupport -- Yes --> CheckWorkload
-    CheckWorkload -- Yes --> TargetGraviton
-    CheckWorkload -- No --> TargetLinuxChoice
-
-    %% Styling
-    classDef termination fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef decision fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    classDef process fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
-    classDef success fill:#e8f5e9,stroke:#2e7d32,stroke-width:4px;
-    classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px;
-
-    class Start,MoveModern,TargetLinuxCap termination;
-    class CheckTech,CheckPlatform,CheckLibs,CheckOS,CheckWinFeat,CheckWinDeps,CheckArmSupport,CheckWorkload decision;
-    class Redesign,MigratePlatform,ReplaceLibs,UpgradeOS process;
-    class TargetGraviton,TargetWinX86,TargetLinuxX86,TargetLinuxChoice success;
-    class StayFramework1,StayFramework2,StayFramework3,StayFramework4 failure;
-```
-
-### How to Use This Decision Tree in Reports
-
-When generating the modernization report, walk through each decision node and map the actual codebase findings:
-
-1. **At each decision node**, state what was scanned and what was found (or not found)
-2. **Highlight the path taken** through the tree based on evidence
-3. **For blocker nodes** (red), explain specifically what was detected and why it blocks
-4. **For the final target node** (green), explain how the cumulative findings led to this recommendation
-
-This gives readers full traceability from codebase evidence → decision logic → recommended target platform.
+The result should give the reader full traceability from codebase evidence → decision logic → recommended target platform and architecture.
 
 ## Migration Strategy Bank
 
@@ -273,14 +278,38 @@ This gives readers full traceability from codebase evidence → decision logic �
 | x86 | ARM (Graviton) | Cost optimization |
 | Windows Server | Linux | Cost savings, better container support |
 
-### Database Modernization
+### Database Modernization — Scope Must Be Confirmed First
 
-| Current | Target | Notes |
-|---------|--------|-------|
-| SQL Server | Aurora PostgreSQL | Cost optimization (no licensing) |
-| SQL Server | Amazon RDS SQL Server | Managed service |
-| LINQ to SQL | EF Core | Modern data access |
-| Stored Procedures | Application code | Better testability |
+**⛔ Do NOT recommend a database engine change by default.** Many .NET modernization programmes
+deliberately exclude database migration and keep their applications on SQL Server, with the target
+design **deliberately avoiding database change** so that the application migration is the only
+variable. Recommending Aurora PostgreSQL into that scope contradicts the customer's own stated
+boundary and undermines the rest of the report.
+
+**Required sequence:**
+
+1. **Report the SQL Server footprint** — engine version and edition, stored-procedure / function /
+   trigger / SSIS-package counts, and the data access technology and version (see SQL Server
+   Footprint above). This is useful regardless of scope, because logic held in the database limits
+   what can be extracted into a service.
+2. **State the scope question explicitly** as an open item requiring customer confirmation: *is
+   database migration in scope now, or explicitly deferred?* Never infer the answer from the
+   presence of a commercial engine.
+3. **Then, and only then:**
+   - **If the customer confirms migration is OUT of scope** — keep the application on SQL Server.
+     Target Amazon RDS for SQL Server or SQL Server on EC2, and design the target so the data layer
+     is unchanged. Report the licensing position as context, not as a reason to override the scope
+     decision. Do not include a database migration workstream in any of the three pathways.
+   - **If the customer confirms migration is IN scope** — then engine options apply, and the
+     conversion becomes a workstream of its own with its own sizing.
+
+| Current | Target | Applies when |
+|---------|--------|--------------|
+| SQL Server | Amazon RDS for SQL Server | Database migration out of scope — managed service, no engine change, no application data-layer rework |
+| SQL Server | SQL Server on EC2 | Database migration out of scope and RDS feature gaps or licensing arrangements require it |
+| SQL Server | Aurora PostgreSQL | **Only when the customer has confirmed database migration is in scope.** Removes commercial licensing, but adds T-SQL → PostgreSQL conversion, data access rework and a data migration workstream |
+| LINQ to SQL | EF Core | Always — LINQ to SQL has no modern .NET support, independent of engine choice |
+| Stored Procedures | Application code | Only where the customer wants domain logic moved out of the database. Report the volume; the decision is theirs |
 
 ### Messaging & Integration
 
@@ -406,12 +435,114 @@ When this pattern applies, include it as an additional pathway or as a variant o
 
 ## .NET-Specific Evaluation Areas
 
+These areas sit on top of the universal criteria in `evaluation-framework.md`, which every path
+must cover. The ones below are the .NET-specific depth, and they are not optional: each is a
+question a modernization specialist will otherwise have to go back to the customer for.
+
 ### Platform & Framework Assessment
 
-- **Target Framework Version**: v4.x vs .NET Core/5+/6+/8
-- **Windows-Only Dependencies**: Identify Windows-specific APIs
-- **32-bit vs 64-bit**: Architecture compatibility
+- **Target Framework Version**: exact version per project (see Target Framework Detection above)
+- **Windows-Only Dependencies**: Identify Windows-specific APIs — see the Windows Lock-In cluster below
+- **32-bit vs 64-bit**: Architecture compatibility, and any `<PlatformTarget>x86</PlatformTarget>` or 32-bit-only components
 - **Framework EOL Status**: Support lifecycle assessment
+
+### Application Type Inventory — the Dominant Effort Driver
+
+**Application type dominates migration effort more than size does.** A 200,000-line Web API ports
+more readily than a 50,000-line Web Forms application. Inventory every project by type and report
+the mix, because a solution frequently contains several.
+
+| Application type | Detection signals | Migration character |
+|------------------|-------------------|---------------------|
+| **ASP.NET Web Forms** | `.aspx`, `.ascx`, `.master`, `Global.asax`, `System.Web.UI`, ViewState usage | **Hardest.** No forward port exists — every page is a rewrite (Razor Pages, MVC, Blazor or a SPA). Logic in code-behind must be extracted first |
+| **WCF (server-side)** | `System.ServiceModel`, `[ServiceContract]`, `[OperationContract]`, `.svc` files, `<system.serviceModel>` | **Hardest.** Server-side WCF is not supported on modern .NET. Contracts must be re-expressed as REST or gRPC; CoreWCF covers a limited subset |
+| **ASP.NET MVC 5** | `System.Web.Mvc`, `Controllers/`, `Views/`, `RouteConfig.cs` | **Easiest.** Concepts map closely onto ASP.NET Core MVC |
+| **ASP.NET Web API 2** | `System.Web.Http`, `ApiController`, `WebApiConfig.cs` | **Easiest.** Maps closely onto ASP.NET Core Web API |
+| **WinForms** | `System.Windows.Forms`, `.Designer.cs`, `Form1.cs` | Runs on modern .NET but **Windows-only** — blocks Linux and Graviton entirely |
+| **WPF** | `System.Xaml`, `.xaml`, `PresentationFramework` | Runs on modern .NET but **Windows-only** — same constraint |
+| **Windows Service** | `ServiceBase`, `System.ServiceProcess`, installer classes | Re-hosts as a `BackgroundService` / worker; Windows-specific service plumbing is replaced |
+| **Console application** | `Main()` entry point, `OutputType Exe` | Usually the simplest to port |
+| **Scheduled jobs / batch** | Windows Task Scheduler entries, `.bat`/`.cmd` wrappers, `Quartz.NET`, timer loops | The scheduling mechanism itself needs a target (EventBridge Scheduler, ECS scheduled tasks, Kubernetes CronJob) — easy to overlook because it lives outside the codebase |
+
+**Report guidance.** Give per-type counts (e.g. `.aspx` page count, `[ServiceContract]` count) as
+**inventory**, and surface the mix in section 3 (Visual Architecture State) and section 4 (Critical
+Findings Matrix). Never convert these counts into an effort figure.
+
+### Primary Language and the VB.NET Split
+
+Detect the language of every project and report the split:
+
+- `.csproj` → C#
+- `.vbproj` → VB.NET
+- `.fsproj` → F#
+- Mixed solutions are common, especially where an older VB.NET module survives inside a C# solution
+
+**VB.NET adds material friction** to both AI-assisted transformation and AWS Transform for .NET.
+Training data, tooling coverage and community migration examples are all thinner than for C#, and
+VB-specific constructs (`On Error Resume Next`, late binding, default properties, `My.*` namespace,
+implicit conversions) have no clean C# or modern-.NET equivalent. Where VB.NET is found:
+
+- Name the specific projects and the approximate share of the codebase they represent
+- Flag it as a distinct finding in section 4, not as a language footnote in section 3
+- Note whether the programme intends to keep VB.NET or convert to C# as part of the migration — a
+  scope question for the customer, not an analyzer decision
+
+### Windows Lock-In — a First-Class Findings Cluster
+
+**This is the single biggest obstacle to a Linux or Graviton target**, and it decides whether the
+Windows-container interim hop is needed. Treat it as its own findings cluster in section 4, with
+each item named, located and assessed — not as one summary line. Commercial libraries within the
+cluster also belong in section 5 (Proprietary Dependency Analysis).
+
+Scan exhaustively for:
+
+| Category | Detection signals | Consequence |
+|----------|-------------------|-------------|
+| **COM / COM+ interop** | `Microsoft.VisualBasic.Interaction`, `Type.GetTypeFromProgID`, `Activator.CreateInstance` on a ProgID, `<COMReference>` in project files, `Marshal.*`, `[ComImport]`, `System.EnterpriseServices` | Cannot run under Linux. Requires replacement or isolation behind an API on a Windows host |
+| **P/Invoke / native Windows API** | `[DllImport("kernel32.dll")]`, `user32.dll`, `advapi32.dll`, `gdi32.dll`, any `[DllImport]` naming a Windows DLL | Each call site needs a cross-platform equivalent or an abstraction |
+| **Registry access** | `Microsoft.Win32.Registry`, `RegistryKey`, `Registry.LocalMachine` | Replace with configuration (Parameter Store, Secrets Manager, environment variables) |
+| **MSMQ** | `System.Messaging`, `MessageQueue`, queue paths with `.\private$\` | No modern .NET support. Target SQS/SNS or Amazon MQ |
+| **IIS-specific modules and handlers** | `<httpModules>`, `<httpHandlers>`, `<modules>`, `<handlers>` in `web.config`; custom `IHttpModule` / `IHttpHandler` implementations; ISAPI filters | Re-expressed as ASP.NET Core middleware. Custom modules are frequently overlooked |
+| **GAC-installed assemblies** | `<Reference>` without `HintPath`, references resolved from the GAC, `gacutil` in build scripts | The assembly may not exist as a NuGet package or file anywhere in the repository — a supply problem, not just a code problem |
+| **`System.Drawing` / GDI+** | `System.Drawing.Common`, `Bitmap`, `Graphics`, `Image.FromStream` | `System.Drawing.Common` is Windows-only on modern .NET. Needs ImageSharp, SkiaSharp or equivalent |
+| **Crystal Reports** | `CrystalDecisions.*`, `.rpt` files | No Linux-compatible version. A prime candidate for the EC2 legacy sidecar pattern |
+| **RDLC / SSRS reporting** | `Microsoft.Reporting.WebForms`, `.rdlc` files, `ReportViewer`, SSRS endpoints | Windows-bound rendering; needs a replacement reporting approach |
+| **Office interop** | `Microsoft.Office.Interop.*`, `Excel.Application`, `Word.Application` | Requires Office installed on the host. Replace with OpenXML, ClosedXML or EPPlus |
+| **32-bit-only components** | `<PlatformTarget>x86</PlatformTarget>`, `Prefer32Bit`, 32-bit native DLLs, 32-bit ODBC/OLEDB drivers | Constrains the entire process to 32-bit, which blocks a modern 64-bit Linux target |
+| **Unmanaged DLLs with no source** | Native DLLs in `lib/`, `bin/` or a `ThirdParty/` folder with no corresponding source or vendor | **Potentially unresolvable.** Flag explicitly as needing customer confirmation of whether source or a vendor relationship still exists |
+| **UNC shares and local paths** | Hard-coded `\\server\share`, `C:\`, `Path.Combine` with drive letters, `web.config` paths | Must be externalised to S3, EFS or configuration before containerization |
+| **Windows scheduled tasks** | Task Scheduler XML, `schtasks` calls, `.bat`/`.cmd` wrappers referencing the application | Lives outside the codebase, so it is easy to miss entirely and then discover at cutover |
+| **Windows Authentication / AD** | See the Active Directory / Windows SSO blocker section above | Auth rework is routinely the hidden bulk of the effort |
+
+**For each item found, report:** what it is, where it is (project and file), why it blocks the
+target, and what the replacement or isolation option is. For each item that cannot be resolved,
+say so plainly and connect it to the EC2 legacy sidecar pattern.
+
+### Build Toolchain and Baseline Buildability
+
+- **Visual Studio version** in use — from `.sln` format version and `# Visual Studio Version` header, `.suo`/`.vs` artifacts, and any SDK or toolset pins
+- **Project file style** — legacy non-SDK `.csproj` versus SDK-style. Legacy style must be converted, and the conversion itself is a transformation step
+- **Package management style** — `packages.config` versus `<PackageReference>`. `packages.config` needs migrating before or during the port
+- **Build mechanism** — msbuild directly, a packaged build, a CI pipeline definition, or a manual Visual Studio build. Note if no scripted build exists at all
+- **Whether the solution builds today from a clean checkout, and how long a full build takes**
+
+A non-building baseline is a **gating finding** — see the gating-findings rule in
+`evaluation-framework.md`. Without a build, generated or ported code cannot be validated against
+anything, so every downstream claim in the report is unverified.
+
+### SQL Server Footprint
+
+Report the footprint whether or not database migration is in scope — the volume of logic held in
+the database limits what can be extracted into a service, regardless of which engine it runs on:
+
+- **Engine version and edition** — SQL Server 2012 / 2016 / 2019 / 2022, Standard or Enterprise. Edition matters because Enterprise-only features constrain the target options
+- **Counts** of stored procedures, functions, triggers and SSIS packages
+- **Data access technology and version** — ADO.NET, Entity Framework 6 (which version), EF Core, NHibernate, Dapper, or raw SQL. EF6 → EF Core is a well-travelled path; older ORMs need more manual rework
+- **Business logic held in the database** — where stored procedures carry domain rules rather than data access, extracting a service means either moving that logic or calling back into the database. Name the specific procedures where this is visible
+- **Linked servers, cross-database queries and SQL Agent jobs** — coupling that lives outside the application and is easy to miss
+
+Surface all of this in section 6 (Database Analysis & Migration Opportunity), together with the
+explicit scope question described in the Database Modernization section below.
 
 ### ASP.NET Web Forms Assessment
 
@@ -468,6 +599,10 @@ Include verification note in report:
 
 ## SQL Server to PostgreSQL Migration
 
+**Applies only when the customer has confirmed database migration is in scope** — see Database
+Modernization above. If migration is out of scope, report the SQL Server footprint and omit this
+conversion analysis entirely rather than presenting it as a recommendation.
+
 ### T-SQL to PostgreSQL Conversion
 
 | T-SQL | PostgreSQL | Notes |
@@ -503,10 +638,14 @@ Prioritize AWS Transform tools in this order:
 | Kiro | AI-assisted code migration and refactoring | Supplementary - Use throughout all phases |
 
 **Tool Selection Guidance:**
-- For full modernization (.NET upgrade + SQL Server → Aurora PostgreSQL): Use **AWS Transform for Windows Full Stack**
-- For .NET framework upgrade only (keeping SQL Server): Use **AWS Transform for .NET**
-- For database migration only (keeping .NET Framework): Use **SCT + DMS**
-- For containerization without code changes: Use **AWS App2Container**
+- For .NET runtime upgrade only, **keeping the database unchanged** — the common case where database migration is out of scope: use **AWS Transform for .NET**
+- For full modernization (.NET upgrade **and** a confirmed SQL Server → Aurora PostgreSQL migration): use **AWS Transform for Windows Full Stack**
+- For database migration only (keeping .NET Framework): use **SCT + DMS**
+- For containerization without code changes: use **AWS App2Container**
+- For a **3.0 / 3.5** codebase: **AWS Transform Custom** runs the 3 → 4 pre-upgrade step first, before any of the above
+
+Select tooling to match the confirmed scope. Do not recommend Windows Full Stack on the basis of a
+commercial database being present when the customer has excluded database migration.
 
 ## Code Migration Examples
 
