@@ -40,7 +40,7 @@ At the time of writing, the monolith is at the **pre-merge** state. Verified by 
 
 - 4,731 lines, 13 report sections
 - 5 modernization paths: .NET → .NET 8, WebSphere, WebLogic, plain Java, COBOL
-- Inlines: evaluation framework, AWS target services, `dotnet-to-aws`, `websphere-to-springboot`, `weblogic-to-springboot`, `j2ee-to-springboot-reactive`, `java-to-springboot`, `cobol-to-java`
+- Inlines: evaluation framework, AWS target services, `dotnet-to-aws`, `websphere-to-springboot`, `weblogic-to-springboot`, `j2ee-to-springboot`, `java-to-springboot`, `cobol-to-java`
 - No occurrences of: WildFly, `dotnet-to-springboot`, `.NET 10`, front-end/SPA content, Oracle → PostgreSQL content, PL/SQL conversion content
 - Platform detection is single-dimension (source only); there is no target-platform prompt
 - `SUPPORTED MODERNIZATION PATHS` table has 5 rows
@@ -77,7 +77,7 @@ These inlined guides have changed materially and need refreshing from this repos
 |---|---|
 | `dotnet-to-aws.md` | +268 lines net. Analyzer Mission section; .NET 10 as a selectable target; upgrade-path modelling; Windows containers interim hop; database scope fix; exact version detection; .NET questionnaire depth; **duplicated decision-tree section merged** (see §6) |
 | `evaluation-framework.md` | +234 lines net. Mandatory Baseline Inventory B1–B16; Gating Findings; derivable-vs-customer-input contract; **ASCII diagram converted to Mermaid** (see §6) |
-| `j2ee-to-springboot-reactive.md` | +90 lines. New "Required J2EE / Java Analysis Depth" section, mandatory for WebSphere, WebLogic and WildFly |
+| `j2ee-to-springboot.md` | +90 lines. New "Required J2EE / Java Analysis Depth" section, mandatory for WebSphere, WebLogic and WildFly |
 | `java-to-springboot.md` | +92 lines. New "Required Java Analysis Depth" section |
 | `websphere-to-springboot.md` | +21 lines. Proprietary APIs reframed as the #1 J2EE risk, with WebSphere-specific rows |
 | `weblogic-to-springboot.md` | +51 lines. Same reframing, plus Oracle database options made scope-aware |
@@ -155,10 +155,10 @@ source + target combination, and in what order to apply them.
 | Source | Target | Apply, in order |
 |---|---|---|
 | .NET | .NET 8 or .NET 10 | dotnet-to-aws |
-| .NET | Java Spring Boot + SPA | dotnet-to-springboot, j2ee-to-springboot-reactive, frontend-to-spa¹ |
-| WebSphere | Spring Boot | websphere-to-springboot, j2ee-to-springboot-reactive, frontend-to-spa¹ |
-| WebLogic | Spring Boot | weblogic-to-springboot, j2ee-to-springboot-reactive, frontend-to-spa¹ |
-| WildFly / JBoss EAP | Spring Boot | wildfly-to-springboot, j2ee-to-springboot-reactive, frontend-to-spa¹ |
+| .NET | Java Spring Boot + SPA | dotnet-to-springboot, j2ee-to-springboot, frontend-to-spa¹ |
+| WebSphere | Spring Boot | websphere-to-springboot, j2ee-to-springboot, frontend-to-spa¹ |
+| WebLogic | Spring Boot | weblogic-to-springboot, j2ee-to-springboot, frontend-to-spa¹ |
+| WildFly / JBoss EAP | Spring Boot | wildfly-to-springboot, j2ee-to-springboot, frontend-to-spa¹ |
 | plain Java | Spring Boot 3.x | java-to-springboot, frontend-to-spa¹ |
 | COBOL | Java Spring Boot | cobol-to-java, frontend-to-spa¹ |
 
@@ -168,7 +168,7 @@ Orthogonal: apply **oracle-to-postgresql** for any source where Oracle is detect
 confirms the migration is in scope.
 
 Preserve two structural points:
-- `java-to-springboot` deliberately does **not** take `j2ee-to-springboot-reactive` — the shared module concerns application-server constructs a plain Tomcat/Struts application does not have
+- `java-to-springboot` deliberately does **not** take `j2ee-to-springboot` — the shared module concerns application-server constructs a plain Tomcat/Struts application does not have
 - The universal three (report structure, evaluation framework, AWS target services) apply to **every** combination
 
 ## 6. Two pre-existing defects fixed here — apply the same fixes

@@ -187,10 +187,10 @@ named in the row that matches the detected source + target, it is not loaded.
 | Source | Target | Then load, in order |
 |--------|--------|---------------------|
 | .NET Framework | .NET 10 | `dotnet-to-aws.md` |
-| .NET Framework | Java Spring Boot + SPA | `dotnet-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
-| J2EE — IBM WebSphere | Spring Boot | `websphere-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
-| J2EE — Oracle WebLogic | Spring Boot | `weblogic-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
-| J2EE — WildFly / JBoss EAP | Spring Boot | `wildfly-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
+| .NET Framework | Java Spring Boot + SPA | `dotnet-to-springboot.md`, `j2ee-to-springboot.md`, `frontend-to-spa.md` ¹ |
+| J2EE — IBM WebSphere | Spring Boot | `websphere-to-springboot.md`, `j2ee-to-springboot.md`, `frontend-to-spa.md` ¹ |
+| J2EE — Oracle WebLogic | Spring Boot | `weblogic-to-springboot.md`, `j2ee-to-springboot.md`, `frontend-to-spa.md` ¹ |
+| J2EE — WildFly / JBoss EAP | Spring Boot | `wildfly-to-springboot.md`, `j2ee-to-springboot.md`, `frontend-to-spa.md` ¹ |
 | Java SE / plain Java | Spring Boot 4.1.x + Java 21/25 | `java-to-springboot.md`, `frontend-to-spa.md` ¹ |
 | COBOL / Mainframe | Java Spring Boot | `cobol-to-java.md`, `frontend-to-spa.md` ¹ |
 
@@ -224,7 +224,7 @@ patterns are both common and both legitimate:
 Ask which applies. Do not infer it from the source platform, from the presence of a commercial
 engine, or from what a previous analysis assumed.
 
-`java-to-springboot.md` deliberately does **not** load `j2ee-to-springboot-reactive.md`: the
+`java-to-springboot.md` deliberately does **not** load `j2ee-to-springboot.md`: the
 shared module is about replacing application-server constructs (EJB, JTA, vendor JNDI) that a
 plain Tomcat, Jetty or Struts application does not have.
 

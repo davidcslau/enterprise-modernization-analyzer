@@ -2,7 +2,7 @@
 inclusion: manual
 ---
 
-# .NET Framework to Java Spring Boot Reactive Migration
+# .NET Framework to Java Spring Boot Migration
 
 ## Objective
 
@@ -513,7 +513,7 @@ unchanged precisely so that the language migration is the only variable being te
 
 ### Security Migration
 
-| .NET Security | Spring Security Reactive |
+| .NET Security | Spring Security |
 |---------------|--------------------------|
 | Windows Authentication (Kerberos/NTLM) | AWS Cognito + SAML/OIDC federation to AD |
 | Forms Authentication | Spring Security reactive form login + JWT |
@@ -964,8 +964,8 @@ graph TB
 
 1. Zero .NET Framework, Windows, IIS, or SQL Server dependencies in final build
 2. All C# business logic correctly translated to Java with equivalent behavior verified
-3. Application starts with embedded Netty (not Tomcat, IIS, or any servlet container)
-4. All data access migrated from Entity Framework / ADO.NET to R2DBC with Aurora PostgreSQL
+3. Application starts with an embedded container - Tomcat 11 / Jetty 12.1, or Netty on the reactive stack - not IIS or any managed application server
+4. All data access migrated from Entity Framework / ADO.NET to Spring Data JPA (blocking) or Spring Data R2DBC (reactive), with Aurora PostgreSQL
 5. All R2DBC entities have explicit @Column annotations mapping to database column names
 6. SQL Server fully migrated to Aurora PostgreSQL (T-SQL → PostgreSQL)
 7. Flyway migrations execute successfully before custom data loading

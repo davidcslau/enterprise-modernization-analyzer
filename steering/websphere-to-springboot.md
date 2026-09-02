@@ -2,7 +2,7 @@
 inclusion: manual
 ---
 
-# IBM WebSphere to Spring Boot Reactive Migration
+# IBM WebSphere to Spring Boot Migration
 
 ## Objective
 
@@ -47,7 +47,7 @@ Scan for these package imports:
 | EJB Stateless Session Beans | Spring `@Service` with reactive return types |
 | EJB Stateful Session Beans | Spring service + Redis for state |
 | EJB Message-Driven Beans | Reactor Kafka / AWS SQS listeners |
-| WebSphere Security | Spring Security Reactive |
+| WebSphere Security | Spring Security |
 | WebSphere Scheduler | Spring `@Scheduled` |
 | JNDI DataSource | Spring `DataSource` bean / R2DBC |
 | WebSphere MQ | Amazon SQS / MSK (Kafka) |
@@ -87,7 +87,7 @@ Scan for these package imports:
 
 ### Security Migration
 
-| WebSphere Security | Spring Security Reactive |
+| WebSphere Security | Spring Security |
 |--------------------|--------------------------|
 | User Registry (LDAP) | ReactiveAuthenticationManager |
 | LTPA Tokens | JWT / OAuth2 |
@@ -221,7 +221,7 @@ no direct successor exists, and the replacement or isolation option.
 
 ### Phase 7: Security Migration
 
-1. Replace WebSphere security with Spring Security Reactive
+1. Replace WebSphere security with Spring Security
 2. Migrate user registries to Cognito/LDAP
 3. Replace LTPA with JWT/OAuth2
 
@@ -330,18 +330,22 @@ graph TB
 ## Validation Criteria
 
 1. Zero J2EE/Jakarta/WebSphere dependencies in final build
-2. Application starts with embedded Netty (not servlet container)
+2. Application starts with an embedded container - Tomcat 11 / Jetty 12.1 on the servlet stack, or Netty on the reactive stack - not a managed application server
 3. All EJBs converted to Spring reactive services
-4. All data access migrated to R2DBC
+4. All data access migrated off the app server: Spring Data JPA / Hibernate 7.4 on the blocking stack, or Spring Data R2DBC on the reactive stack
 5. Messaging works with Kafka/SQS
-6. Security implemented with Spring Security Reactive
+6. Security implemented with Spring Security
 7. Container runs on both x86_64 and ARM64 (Graviton)
-8. All tests pass with WebTestClient and StepVerifier
+8. All tests pass - MockMvc / RestTestClient on the servlet stack, or WebTestClient and StepVerifier on the reactive stack
 
+
+**On the concurrency model:** these criteria are written to hold for either stack. The blocking-vs-reactive
+decision itself is covered in `steering/j2ee-to-springboot.md` under **Blocking or Reactive: a Decision,
+Not a Default** - apply that section rather than assuming a reactive target.
 
 ## Shared J2EE → Spring Boot Reactive Patterns
 
-The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebLogic and WildFly/JBoss EAP migration paths and live in `steering/j2ee-to-springboot-reactive.md`.
+The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebLogic and WildFly/JBoss EAP migration paths and live in `steering/j2ee-to-springboot.md`.
 
 That file is dispatched explicitly alongside this one by the dispatch table in **POWER.md Step 2** — it is not transcluded and does not load itself. If it has not been loaded, load it before applying the shared patterns.
 

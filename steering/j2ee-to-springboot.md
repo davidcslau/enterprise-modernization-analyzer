@@ -13,7 +13,7 @@ inclusion: manual
   from POWER.md Step 2 is the only loading mechanism used by this power.
 -->
 
-# J2EE to Spring Boot Reactive Migration - Common Patterns
+# J2EE to Spring Boot Migration - Common Patterns
 
 This steering file contains common migration patterns shared between the WebSphere, WebLogic and WildFly/JBoss EAP paths to Spring Boot Reactive migrations, together with the J2EE and Java analysis depth required on all three.
 
@@ -126,10 +126,88 @@ section 5 alongside the licence analysis.
 
 All J2EE migrations target:
 - Spring Boot 4.1.x with Java 21 or 25 (Java 17 is the floor, not the recommendation)
-- Fully reactive architecture (WebFlux, R2DBC, Reactor)
 - AWS container-based deployments (ECS/EKS)
 - Graviton processor optimization
-- AWS Java Runtime (Corretto)
+- Amazon Corretto
+
+**The concurrency model is a separate decision** — see below. It is not fixed by this file.
+
+## Blocking or Reactive: a Decision, Not a Default
+
+**Present both with their consequences. Rank neither, and do not recommend one.** This is the same
+discipline the power applies to full-SPA-versus-hybrid and to front-end framework choice: the
+analyzer supplies evidence, the customer and their modernization specialists decide.
+
+### The starting assumption, and why it is only that
+
+**Absent evidence to the contrary, assume blocking Spring MVC with virtual threads enabled.** That
+is a default to depart from, not a verdict — state it as such.
+
+The reasoning is specific to *migration*, and it is worth writing into the report because it does
+not apply to greenfield work:
+
+- Ported J2EE business logic is **blocking by construction** — EJB methods, servlet request
+  handling, JDBC calls, synchronous JMS. Keeping it blocking means the translated code keeps the
+  same shape as the original, which is exactly what a behavioural-equivalence acceptance criterion
+  wants to compare.
+- Rewriting that logic into Reactor operator chains stacks a **paradigm change on top of a platform
+  change**. Two simultaneous changes, and the reactive one is where debuggability, stack traces and
+  team-readiness problems concentrate.
+- Virtual threads (Java 21+, first-class on the Java 25 target) remove the original reason most
+  teams adopted reactive in the first place: thread-per-request no longer caps concurrency the way
+  it did on Java 8. Published head-to-head benchmarking puts virtual threads on Netty ahead in
+  roughly half of measured contests, WebFlux ahead in roughly a quarter, with the remainder
+  inconclusive — which is not the decisive reactive advantage the older guidance assumed.
+
+### When reactive earns its place
+
+Depart from the default when the evidence supports it. These are concrete, checkable conditions,
+not preferences:
+
+| Condition | Why it favours reactive |
+|-----------|------------------------|
+| **Streaming or server-sent-event endpoints** | Backpressure and incremental delivery are what Reactor is for; virtual threads do not provide them |
+| **Very high concurrent connection counts**, especially long-lived or idle ones | Memory per connection stays lower without a thread per request, even a virtual one |
+| **The team already writes and operates reactive code** | The learning-curve and debuggability arguments largely disappear |
+| **A fully non-blocking driver stack already exists** end to end | Reactive gains nothing if one JDBC call in the chain blocks, so this is a precondition rather than a benefit |
+| **An existing reactive codebase** being extended | Consistency beats mixing models |
+
+Where **none** of these hold, adopting reactive means paying Reactor's complexity for throughput the
+blocking-plus-virtual-threads stack would have delivered anyway. Say so plainly.
+
+### What each choice implies
+
+| | Blocking Spring MVC + virtual threads | Reactive WebFlux |
+|---|---|---|
+| Web layer | `@RestController`, servlet stack, embedded Tomcat 11 or Jetty 12.1 | `@RestController` returning `Mono`/`Flux`, embedded Netty |
+| Data access | **Spring Data JPA / Hibernate 7.4**, or `JdbcClient` | **Spring Data R2DBC**, with a reactive driver |
+| Transactions | `@Transactional` — familiar semantics | Reactive transactions; no thread-bound context |
+| Ported EJB logic | Translates with its shape intact | Rewritten into operator chains |
+| Debugging | Ordinary stack traces | Operator-fused traces; needs Reactor tooling and habits |
+| Blocking libraries | Fine — that is the point | **A single blocking call poisons the event loop.** Every driver and SDK must be non-blocking |
+| Enable with | `spring.threads.virtual.enabled=true` | The WebFlux starter instead of the web MVC starter |
+
+### Virtual threads: two findings to report if they are enabled
+
+Virtual threads remain **opt-in** in Spring Boot 4 (`spring.threads.virtual.enabled=true`), so
+enabling them is a deliberate act. Two consequences belong in the findings matrix, because both are
+silent and both are common in ported legacy code:
+
+- **Pinning.** A `synchronized` block on an I/O path pins the virtual thread to its carrier thread,
+  which reproduces exactly the thread-starvation bottleneck virtual threads were meant to remove.
+  Legacy Java is full of `synchronized` around caches, connection handling and encryption helpers.
+  The remedy is `ReentrantLock`, which lets the virtual thread unmount while blocked. Scan for
+  `synchronized` on paths that perform I/O, and report the count and locations. Running with
+  `-Djdk.tracePinnedThreads=full` in staging surfaces the rest.
+- **ThreadLocal and security context propagation.** Request-scoped state held in `ThreadLocal` —
+  `SecurityContextHolder` being the common case — behaves differently once carrier threads are
+  reused, and context bleed between requests is a correctness and security problem rather than a
+  performance one. Inventory custom `ThreadLocal` usage; `ScopedValue` is the modern replacement.
+
+**Report guidance.** State which model the analysis assumes, state the evidence for or against
+reactive from the conditions above, and present the consequences table. Do not declare a winner, and
+do not present reactive as the modern or advanced choice — that framing is what the older guidance
+got wrong.
 
 ## Common Migration Strategy Bank
 
@@ -140,7 +218,7 @@ All J2EE migrations target:
 | EJB Stateless Session Beans | Spring `@Service` with reactive return types (Mono/Flux) |
 | EJB Stateful Session Beans | Spring service + Redis/DynamoDB for state |
 | EJB Message-Driven Beans | Reactor Kafka / AWS SQS listeners |
-| J2EE Security | Spring Security Reactive |
+| J2EE Security | Spring Security |
 | J2EE Timer Service | Spring `@Scheduled` |
 | JNDI DataSource | Spring `DataSource` bean / R2DBC |
 | JMS | Amazon SQS / MSK (Kafka) |
@@ -170,7 +248,7 @@ All J2EE migrations target:
 
 ### Security Migration
 
-| J2EE Security | Spring Security Reactive |
+| J2EE Security | Spring Security |
 |---------------|--------------------------|
 | User Registry (LDAP) | ReactiveAuthenticationManager |
 | Security Tokens | JWT / OAuth2 |
@@ -233,7 +311,7 @@ All J2EE migrations target:
 
 ### Phase 7: Security Migration
 
-1. Replace J2EE security with Spring Security Reactive
+1. Replace J2EE security with Spring Security
 2. Migrate user registries to Cognito/LDAP
 3. Replace security tokens with JWT/OAuth2
 
@@ -404,13 +482,13 @@ public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
 All J2EE to Spring Boot reactive migrations must meet:
 
 1. Zero J2EE/Jakarta/Application Server dependencies in final build
-2. Application starts with embedded Netty (not servlet container)
+2. Application starts with an embedded container - Tomcat 11 / Jetty 12.1 on the servlet stack, or Netty on the reactive stack - not a managed application server
 3. All EJBs converted to Spring reactive services
-4. All data access migrated to R2DBC
+4. All data access migrated off the app server: Spring Data JPA / Hibernate 7.4 on the blocking stack, or Spring Data R2DBC on the reactive stack
 5. Messaging works with Kafka/SQS
-6. Security implemented with Spring Security Reactive
+6. Security implemented with Spring Security
 7. Container runs on both x86_64 and ARM64 (Graviton)
-8. All tests pass with WebTestClient and StepVerifier
+8. All tests pass - MockMvc / RestTestClient on the servlet stack, or WebTestClient and StepVerifier on the reactive stack
 
 ## Risk Mitigation Patterns
 

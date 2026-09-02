@@ -99,21 +99,49 @@ Once a Java codebase is confirmed, identify the web/runtime framework to tune mi
 
 All Java migrations target:
 - Spring Boot 4.1.x with Java 21 or Java 25 (Java 17 is the floor, but not the recommendation)
-- Reactive architecture (WebFlux, R2DBC, Reactor) where suitable, or servlet stack (Spring MVC + Tomcat embedded) where blocking I/O dominates
 - AWS container-based deployments (ECS Fargate / EKS)
 - Graviton processor optimization
 - Amazon Corretto JDK
 
-**Reactive vs Servlet Decision:**
+**The concurrency model is a decision, not a default.** Present both with consequences and rank
+neither — the same discipline this power applies to full-SPA-versus-hybrid and to front-end
+framework choice.
 
-| Workload Profile | Recommended Target |
-|------------------|--------------------|
-| High-concurrency I/O (API gateway, streaming, event fan-out) | Spring Boot 3 + WebFlux (reactive) |
-| Mixed CRUD APIs with moderate traffic | Spring Boot 3 + Spring MVC (servlet, Tomcat embedded) |
-| Heavy blocking SDK/driver usage (no reactive equivalent) | Spring Boot 3 + Spring MVC |
-| Data-intensive batch | Spring Boot 3 + Spring Batch |
+**Starting assumption: blocking Spring MVC with virtual threads enabled** — a default to depart
+from, not a verdict. Ported Java logic is blocking by construction, so keeping it blocking preserves
+the shape of the original code, which is what a behavioural-equivalence acceptance criterion wants
+to compare. Virtual threads on Java 21+ remove the thread-per-request scaling ceiling that was the
+original reason to adopt reactive; published head-to-head benchmarking puts virtual threads on Netty
+ahead in roughly half of measured contests and WebFlux ahead in roughly a quarter.
 
-The rest of this guide assumes Spring Boot 3 as the target and covers both reactive and servlet patterns.
+| Workload Profile | Fits better |
+|------------------|-------------|
+| Mixed CRUD APIs, moderate to high traffic | **Spring MVC + virtual threads** (embedded Tomcat 11) |
+| Heavy blocking SDK / driver usage with no reactive equivalent | **Spring MVC + virtual threads.** A single blocking call poisons a reactive event loop |
+| Streaming or server-sent events, where backpressure matters | **WebFlux.** Virtual threads do not provide backpressure |
+| Very high concurrent connection counts, especially long-lived or idle | **WebFlux** — lower memory per connection |
+| Team already writes and operates reactive code, or an existing reactive codebase is being extended | **WebFlux** — the learning-curve and debuggability objections largely disappear |
+| Fully non-blocking driver stack already in place end to end | **WebFlux** is viable; treat this as a precondition rather than a benefit |
+| Data-intensive batch | **Spring Batch** — note it defaults to in-memory job metadata under Boot 4 |
+
+Where none of the reactive conditions hold, adopting reactive means paying Reactor's complexity for
+throughput the blocking-plus-virtual-threads stack would have delivered anyway. Say so plainly, and
+do not present reactive as the modern or advanced choice.
+
+**If virtual threads are enabled** (`spring.threads.virtual.enabled=true` — still opt-in in Boot 4),
+two silent findings belong in the report, and both are common in legacy Java:
+
+- **Pinning.** `synchronized` on an I/O path pins the virtual thread to its carrier, reproducing the
+  exact thread-starvation bottleneck virtual threads were meant to remove. Legacy code wraps caches,
+  connection handling and crypto helpers in `synchronized` routinely. Remedy is `ReentrantLock`,
+  which lets the thread unmount while blocked. Scan for `synchronized` on I/O paths, report count and
+  locations, and note that `-Djdk.tracePinnedThreads=full` in staging surfaces the remainder.
+- **ThreadLocal and security-context propagation.** Request-scoped `ThreadLocal` state —
+  `SecurityContextHolder` above all — behaves differently once carrier threads are reused, and
+  context bleed between requests is a correctness and security problem, not a performance one.
+  Inventory custom `ThreadLocal` usage; `ScopedValue` is the modern replacement.
+
+The rest of this guide covers both stacks and assumes Spring Boot 4.1.x as the target.
 
 ## Java Modernization Decision Tree
 
@@ -368,11 +396,11 @@ Tools that help:
 | Spring MVC (XML-config, pre-Boot) | Spring Boot 3 auto-configuration + `@SpringBootApplication` |
 | Spring Boot 1.x | Spring Boot 4.1.x (staged: 1.x → 2.7 → 3.5 → 4.1) |
 | Spring Boot 2.x | Spring Boot 4.1.x (staged: 2.x → 3.5 → 4.1; namespace at the 3.5 stage) |
-| Dropwizard | Spring Boot 3 WebFlux or MVC |
+| Dropwizard | Spring Boot 4.1 MVC or WebFlux |
 | JAX-RS / Jersey (standalone) | Spring MVC (preferred) or keep Jersey via `spring-boot-starter-jersey` as a transitional bridge |
 | Vaadin (classic) | Vaadin Flow on Spring Boot 3, or SPA frontend |
 | Apache Wicket | Spring MVC + Thymeleaf |
-| Play Framework 2.x | Spring Boot 3 WebFlux |
+| Play Framework 2.x | Spring Boot 4.1 WebFlux (reactive by origin) |
 
 ### Data Access Migration
 
@@ -489,7 +517,7 @@ on the target side regardless of the source container. Tomcat and Jetty are the 
 
 This section sits on top of the universal Mandatory Baseline Inventory in
 `evaluation-framework.md`. The plain-Java path does not load
-`j2ee-to-springboot-reactive.md`, so the depth below is carried here.
+`j2ee-to-springboot.md`, so the depth below is carried here.
 
 ### JDK Version and Vendor — Both Matter
 

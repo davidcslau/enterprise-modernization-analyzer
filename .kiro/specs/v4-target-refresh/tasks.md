@@ -53,12 +53,12 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 ## Phase 4 — Blocking vs reactive, presented neutrally
 
-- [ ] **4.1** Write the neutral decision section: both options with consequences, neither ranked, concrete criteria for when reactive earns its place. _(R3.1, design §4)_
-- [ ] **4.2** State the starting assumption — blocking Spring MVC + virtual threads — as a default to depart from, with the legacy-migration reasoning. _(R3.2, R3.3)_
-- [ ] **4.3** Rename four files, dropping "Reactive": `j2ee-to-springboot-reactive.md` → `j2ee-to-springboot.md`, and the titles inside `websphere-`, `weblogic-`, `wildfly-` and `dotnet-to-springboot.md`. _(R3.4)_
-- [ ] **4.4** Update the POWER.md dispatch table and every cross-reference for the renamed file **in the same commit**. _(design §7)_
-- [ ] **4.5** Rework R2DBC guidance so JPA is default and R2DBC the documented alternative, including validation criteria that currently *require* R2DBC. _(R3.5, design §4)_
-- [ ] **4.6** Add virtual-thread findings: pinning from `synchronized` on I/O paths (`ReentrantLock` remedy), and ThreadLocal / SecurityContext propagation. _(R3.6)_
+- [x] **4.1** Write the neutral decision section: both options with consequences, neither ranked, concrete criteria for when reactive earns its place. _(R3.1, design §4)_
+- [x] **4.2** State the starting assumption — blocking Spring MVC + virtual threads — as a default to depart from, with the legacy-migration reasoning. _(R3.2, R3.3)_
+- [x] **4.3** Rename four files, dropping "Reactive": `j2ee-to-springboot-reactive.md` → `j2ee-to-springboot.md`, and the titles inside `websphere-`, `weblogic-`, `wildfly-` and `dotnet-to-springboot.md`. _(R3.4)_
+- [x] **4.4** Update the POWER.md dispatch table and every cross-reference for the renamed file **in the same commit**. _(design §7)_
+- [x] **4.5** Rework R2DBC guidance so JPA is default and R2DBC the documented alternative, including validation criteria that currently *require* R2DBC. _(R3.5, design §4)_
+- [x] **4.6** Add virtual-thread findings: pinning from `synchronized` on I/O paths (`ReentrantLock` remedy), and ThreadLocal / SecurityContext propagation. _(R3.6)_
 
 **Commit.**
 

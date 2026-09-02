@@ -206,7 +206,7 @@ legacy-app-modernization-analyzer/
     ├── java-to-springboot.md             # Plain Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard) → Spring Boot 4.1.x + Java 21/25
     ├── wildfly-to-springboot.md          # WildFly / JBoss EAP → Spring Boot
     ├── cobol-to-java.md                  # COBOL → Spring Boot 4.1.x on Java 21/25 (mechanical data inventory + internal consistency rules)
-    ├── j2ee-to-springboot-reactive.md    # Shared J2EE app-server module (EJB, JTA, vendor JNDI) + required J2EE/Java analysis depth
+    ├── j2ee-to-springboot.md    # Shared J2EE app-server module (EJB, JTA, vendor JNDI) + required J2EE/Java analysis depth
     ├── frontend-to-spa.md                # Cross-cutting: current front-end detection and SPA rewrite sizing (any framework)
     └── oracle-to-postgresql.md           # Cross-cutting: Oracle → PostgreSQL workstream (loaded only when in scope)
 ```

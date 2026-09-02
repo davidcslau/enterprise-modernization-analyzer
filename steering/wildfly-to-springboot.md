@@ -2,7 +2,7 @@
 inclusion: manual
 ---
 
-# Red Hat WildFly / JBoss EAP to Spring Boot Reactive Migration
+# Red Hat WildFly / JBoss EAP to Spring Boot Migration
 
 ## Objective
 
@@ -148,7 +148,7 @@ a sequencing option worth surfacing.
 | **JBoss Remoting** (`remote+http`, `http-remoting`) | REST, gRPC or RSocket. There is no drop-in replacement — the remoting boundary becomes an explicit API |
 | **Narayana** transaction manager | Spring `@Transactional`; reactive transactions with R2DBC. Distributed XA needs Saga or Outbox |
 | **`datasources` subsystem JNDI** | Spring `DataSource` bean or R2DBC `ConnectionFactory`, configured from `application.yml` |
-| **Elytron** / legacy security domains / PicketLink | Spring Security Reactive |
+| **Elytron** / legacy security domains / PicketLink | Spring Security |
 | JBoss Logging | SLF4J + Logback |
 | RESTEasy (JAX-RS) | Spring WebFlux `@RestController` (or Spring MVC for the servlet stack) |
 | Hibernate as JPA provider | Spring Data JPA (blocking) or Spring Data R2DBC (reactive) |
@@ -230,7 +230,7 @@ application code.
 
 ### Security Migration
 
-| WildFly / JBoss Security | Spring Security Reactive |
+| WildFly / JBoss Security | Spring Security |
 |--------------------------|--------------------------|
 | **Elytron** (WildFly 11+ / EAP 7.1+) security domains, realms, factories | Spring Security `SecurityWebFilterChain` with an authentication manager |
 | **Legacy `security-domain`** (`security` subsystem, JAAS login modules) | Spring Security authentication providers |
@@ -340,12 +340,16 @@ as evidence for the customer's own business case:
 - Spring Boot 3.x requires Jakarta EE 9+ and Java 17+; **Spring Boot 4.1 requires Jakarta EE 11 and recommends Java 21/25**
 - Where the codebase is on `javax.*` and Java 8, the two-step (Java 8 → 17, then Spring Boot 2.7 → 3.x) is generally unavoidable — see the shared J2EE depth section
 
+**On the concurrency model:** these criteria are written to hold for either stack. The blocking-vs-reactive
+decision itself is covered in `steering/j2ee-to-springboot.md` under **Blocking or Reactive: a Decision,
+Not a Default** - apply that section rather than assuming a reactive target.
+
 ## Shared J2EE / Java Depth — Required for This Path
 
 The J2EE and Java depth required for this path — application server version and its
 javax/jakarta position, framework stack and its migration cost, J2EE/Jakarta API usage,
 removed-API usage, and libraries reaching into removed JDK internals — is shared with the
-WebSphere and WebLogic paths and lives in `steering/j2ee-to-springboot-reactive.md` under
+WebSphere and WebLogic paths and lives in `steering/j2ee-to-springboot.md` under
 **Required J2EE / Java Analysis Depth**.
 
 That file is dispatched alongside this one by POWER.md Step 2. Apply that section in full; it is
@@ -698,7 +702,7 @@ graph TB
 3. Zero JBoss Remoting and remote EJB usage; every remote boundary is an explicit REST or gRPC API
 4. All dependencies explicitly declared and version-managed — nothing relying on server-provided modules
 5. Every custom JBoss module either replaced, retired, or isolated behind an API
-6. Application starts with embedded Netty (or Tomcat on the servlet stack), not a managed application server
+6. Application starts with an embedded container - Tomcat 11 / Jetty 12.1, or Netty on the reactive stack - not a managed application server
 7. All EJBs converted to Spring services; no EJB 2.x constructs remain
 8. All JNDI lookups replaced by dependency injection and configuration
 9. Data access migrated to Spring Data, with Hibernate on an application-managed version
@@ -708,11 +712,11 @@ graph TB
 13. Distributed XA transactions replaced by Saga or Outbox, with the consistency model documented
 14. Namespace fully on `jakarta.*` at **Jakarta EE 11**, and the build on Java 21 or 25
 15. Container runs on both x86_64 and ARM64 (Graviton)
-16. All tests pass with WebTestClient and StepVerifier
+16. All tests pass - MockMvc / RestTestClient on the servlet stack, or WebTestClient and StepVerifier on the reactive stack
 
 ## Shared J2EE → Spring Boot Reactive Patterns
 
-The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebSphere and WebLogic migration paths and live in `steering/j2ee-to-springboot-reactive.md`.
+The patterns below (reactive stack choices, EJB → Spring bean translation, JMS → Reactor messaging, JTA → R2DBC transactions, etc.) are shared with the WebSphere and WebLogic migration paths and live in `steering/j2ee-to-springboot.md`.
 
 That file is dispatched explicitly alongside this one by the dispatch table in **POWER.md Step 2** — it is not transcluded and does not load itself. If it has not been loaded, load it before applying the shared patterns.
 
