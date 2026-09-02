@@ -66,13 +66,13 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 ## Phase 5 — Cross-cutting files
 
-- [ ] **5.1** `frontend-to-spa.md`: generalise to any named framework plus undecided; extend the no-advocacy rule beyond React/Vue. _(R4.1, R4.2, R4.5)_
-- [ ] **5.2** `frontend-to-spa.md`: add the "Target-Specific Considerations" section — hybrid-embedding friction, meta-framework coupling, component-library continuity. Do **not** encode the AI-codegen claim. _(R4.4, R4.7)_
-- [ ] **5.3** `frontend-to-spa.md`: add Spring Security 7 CSRF-on-by-default as a high-priority finding. _(R4.6)_
-- [ ] **5.4** `cobol-to-java.md`: Spring Batch in-memory default affects batch migration guidance. _(R2.7)_
-- [ ] **5.5** `report-structure.md`: `.NET 8` in the Gantt examples (lines ~458, ~487).
-- [ ] **5.6** `evaluation-framework.md`: `.NET 8` references and the Mermaid diagram label.
-- [ ] **5.7** `aws-target-services.md`: Java 25 / Corretto 25, Tomcat 11, Lambda Java 25.
+- [x] **5.1** `frontend-to-spa.md`: generalise to any named framework plus undecided; extend the no-advocacy rule beyond React/Vue. _(R4.1, R4.2, R4.5)_
+- [x] **5.2** `frontend-to-spa.md`: add the "Target-Specific Considerations" section — hybrid-embedding friction, meta-framework coupling, component-library continuity. Do **not** encode the AI-codegen claim. _(R4.4, R4.7)_
+- [x] **5.3** `frontend-to-spa.md`: add Spring Security 7 CSRF-on-by-default as a high-priority finding. _(R4.6)_
+- [x] **5.4** `cobol-to-java.md`: Spring Batch in-memory default affects batch migration guidance. _(R2.7)_
+- [x] **5.5** `report-structure.md`: `.NET 8` in the Gantt examples (lines ~458, ~487).
+- [x] **5.6** `evaluation-framework.md`: `.NET 8` references and the Mermaid diagram label.
+- [x] **5.7** `aws-target-services.md`: Java 25 / Corretto 25, Tomcat 11, Lambda Java 25.
 
 **Commit.**
 

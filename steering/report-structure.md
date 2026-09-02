@@ -455,7 +455,7 @@ gantt
     Dependency analysis          :a2, 2, 3
     
     section Framework Migration
-    Create .NET 8 projects       :b1, 3, 4
+    Create .NET 10 projects      :b1, 3, 4
     Manual code conversion       :b2, 4, 10
     EF6 to EF Core (manual)      :b3, 10, 14
     
@@ -484,7 +484,7 @@ gantt
     
     section Phase 1: Foundation
     AWS Transform analysis       :a1, 0, 0.5
-    Auto-scaffold .NET 8         :a2, 0, 0.5
+    Auto-scaffold .NET 10        :a2, 0, 0.5
     Domain + Data migration      :a3, 0.5, 1
     
     section Phase 2: Parallel Migration

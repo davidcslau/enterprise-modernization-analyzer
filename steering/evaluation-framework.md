@@ -418,7 +418,7 @@ This pattern applies when the analysis finds dependencies that:
 |----------|-------------------------------------|------------------------|
 | .NET Framework | Crystal Reports | No Linux-compatible version; requires Windows + .NET Framework runtime |
 | .NET Framework | Windows-only system DLLs, COM components | Tied to Windows OS; no cross-platform equivalent |
-| .NET Framework | Legacy .NET Framework-only DLLs (no .NET 8 port) | Vendor abandoned or closed-source with no modern build |
+| .NET Framework | Legacy .NET Framework-only DLLs (no modern .NET port) | Vendor abandoned or closed-source with no modern build |
 | WebSphere / WebLogic | Deprecated J2EE libraries (e.g., JAX-RPC, Entity Beans) | Removed from Jakarta EE; no Spring Boot equivalent |
 | WebSphere / WebLogic | Vendor-specific JEE extensions (e.g., IBM MQ JEE bindings, WebLogic T3 protocol) | Proprietary APIs with no open-source replacement |
 
@@ -427,7 +427,7 @@ This pattern applies when the analysis finds dependencies that:
 ```mermaid
 flowchart LR
     subgraph Modern["Modernized Application — ECS / EKS"]
-        App["Modernized App<br/>(.NET 8 / .NET 10<br/>or Spring Boot)"]
+        App["Modernized App<br/>(.NET 10<br/>or Spring Boot 4.1)"]
         Client["API Wrapper / Client"]
         App --- Client
     end

@@ -12,11 +12,24 @@ This guide maps common legacy components to AWS-native services.
 |------------------|-------------|-------|
 | Application Server (WebLogic, WebSphere, WildFly/JBoss EAP, IIS) | Amazon ECS / EKS | Container orchestration |
 | WildFly / JBoss EAP domain mode (domain controller + host controllers) | Amazon ECS / EKS | The domain controller concept disappears; the orchestrator manages replicas |
-| Undertow / Tomcat / Jetty (servlet container) | Embedded server inside the container image | Embedded Netty (reactive) or embedded Tomcat (servlet); no external container to manage |
+| Tomcat / Jetty (servlet container) | Embedded server inside the container image | Embedded **Tomcat 11** or **Jetty 12.1** (Servlet 6.1, required by Spring Boot 4), or Netty on the reactive stack |
+| **Undertow** (WildFly / JBoss default) | Embedded Tomcat 11 or Jetty 12.1 | **Undertow has no Servlet 6.1 release and Spring Boot 4 removed support for it entirely** — a hard blocker, no workaround |
 | Virtual Machines | Amazon EC2 / Fargate | Serverless containers preferred |
 | Batch Processing | AWS Batch / Step Functions | Managed batch workloads |
 | Scheduled Jobs | Amazon EventBridge / Lambda | Serverless scheduling |
 | EJB Timer Service / Quartz cluster jobs | Amazon EventBridge Scheduler | Cluster-wide scheduling without leader election in application code |
+
+### Java Runtime Targets
+
+| Target | Position |
+|--------|----------|
+| **Amazon Corretto 25** | Current LTS, generally available. The default recommendation for a Spring Boot 4.1 target |
+| **Amazon Corretto 21** | LTS, the conservative choice |
+| Java 17 | Spring Boot 4's documented floor, but not a recommendation — some Boot-managed dependencies already require 21+ |
+| **AWS Lambda** | Supports Java 25 as both a managed runtime and a container base image, on Corretto |
+
+Graviton (ARM64) is supported across these; verify per-dependency ARM64 support before committing,
+particularly for native libraries.
 
 ### Container Recommendations
 

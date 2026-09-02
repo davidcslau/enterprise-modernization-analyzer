@@ -9,7 +9,8 @@ inclusion: manual
 Detect the application's current front-end technology, inventory what exists, and size the rewrite to
 the **user-nominated** SPA framework. This file is a cross-cutting dimension, not a platform path: it
 is dispatched alongside a source→target path whenever the back-end target is Java Spring Boot **and**
-the user has named React or Vue as the front-end target.
+the user has named a front-end framework — React, Vue, Angular, Svelte or any other — or has said the
+choice is not yet decided.
 
 **This file is not loaded when the user answered "backend-only"** in POWER.md Step 1B. Backend-only is
 a legitimate and common scope — plenty of programmes modernize the back end and leave the existing UI
@@ -17,22 +18,46 @@ in place — and in that case no front-end rewrite analysis belongs in the repor
 
 ## ⛔ The Framework Choice Is the Customer's, Not the Analyzer's
 
-**React vs Vue is user input. It is never an analyzer recommendation.**
+**The target framework is user input. It is never an analyzer recommendation.** This applies to
+every framework, not to a shortlist of two.
 
-- The user names the target framework in POWER.md Step 1B. Accept it as given.
-- **Never compare React and Vue.** No feature tables, no ecosystem comparisons, no "React has a larger
-  community" or "Vue has a gentler learning curve", no maturity or popularity commentary.
-- **Never advocate either**, and never imply the customer chose wrongly or should reconsider.
+- The user names the target framework in POWER.md Step 1B. Accept it as given, whatever it is —
+  React, Vue, Angular, Svelte, or something else entirely.
+- **Never compare frameworks.** No feature tables, no ecosystem comparisons, no hiring-pool or
+  talent-availability commentary, no "safer default" or "industry standard" language, no maturity or
+  popularity rankings, no benchmark comparisons.
+- **Never advocate any of them**, and never imply the customer chose wrongly or should reconsider.
 - Do not present a framework-selection decision, a framework evaluation matrix, or a framework
   recommendation anywhere in the report.
+- Do not rank frameworks by how well AI assistants generate code for them. That comparison is
+  weakly evidenced and amounts to advocacy.
+
+**This analysis is framework-agnostic, and that is a substantive point rather than a limitation.**
+Almost everything expensive in a front-end migration sits on the *source* side — the screen
+inventory, whether a REST API already exists, business logic in the view layer, what does not port
+cleanly, session and auth coupling. None of it changes with the target. Only a small set of
+target-specific consequences varies, and those are confined to the Target-Specific Considerations
+section near the end of this file.
 
 The analyzer's job on this dimension is exactly three things: **detect what exists today, size the
 rewrite, and surface the risks** of getting from here to the framework the customer has already
-chosen. Where guidance genuinely differs between the two frameworks — build tooling defaults, routing
-library names — state it for the **chosen** framework only.
+chosen.
 
-Where the report needs to name the target, name what the user said: "the target React SPA" or "the
-target Vue.js SPA". Where guidance applies to both, write "the target SPA".
+### When the framework is not yet decided
+
+"Not decided yet" is a **first-class answer**, not a blocker:
+
+- Size the rewrite framework-agnostically. Every number in the screen inventory and every finding
+  about view-layer logic, session state and non-portable capabilities is unaffected by the choice.
+- Name the framework choice as an **open question requiring customer input**, alongside the other
+  items in the derivable-vs-customer-input contract in `evaluation-framework.md`.
+- Do **not** choose on the customer's behalf, and do not stall the analysis waiting for a decision
+  it does not depend on.
+- Where a target-specific consequence would change the answer — the hybrid-embedding point below is
+  the main one — state it conditionally: "if the chosen framework is X, then Y follows."
+
+Where the report needs to name the target, name what the user said: "the target React SPA", "the
+target Angular SPA", and so on. Where guidance applies regardless, write "the target SPA".
 
 ## Current Front-End Detection
 
@@ -275,11 +300,21 @@ discovered late:
   `localStorage`, or an HttpOnly cookie) is a security decision with real consequences: `localStorage`
   is readable by any script on the page, so an XSS becomes a token theft. Report the decision as one
   the customer's security function must make, and state the trade-off rather than picking for them.
-- **CSRF.** The server-rendered synchroniser-token pattern (hidden form fields, `<form:form>` tokens,
-  `__RequestVerificationToken`) does not carry over unchanged. A token-in-header API has a different
-  CSRF posture from a cookie-authenticated one — and a cookie-authenticated SPA still needs CSRF
-  protection. Inventory the existing CSRF mechanism so it is replaced deliberately rather than
-  dropped by accident.
+- **CSRF — and note the Spring Security 7 default changed.** The server-rendered synchroniser-token
+  pattern (hidden form fields, `<form:form>` tokens, `__RequestVerificationToken`) does not carry over
+  unchanged. A token-in-header API has a different CSRF posture from a cookie-authenticated one — and a
+  cookie-authenticated SPA still needs CSRF protection. Inventory the existing CSRF mechanism so it is
+  replaced deliberately rather than dropped by accident.
+
+  **⚠️ High-priority finding on a Spring Boot 4.1 target.** Spring Security 7 **applies CSRF protection
+  to API endpoints by default**. A stateless REST API that never sent a CSRF token — which is the normal
+  shape of an API behind a SPA — starts returning **403** until it is explicitly configured. This is a
+  new default, not a carried-over one, and it bites at exactly the seam this file owns: the first time
+  the new SPA calls the new back end. Report it in section 4 with the remedy named (configure the CSRF
+  policy deliberately for the chosen auth model — disabled with justification for token-in-header
+  stateless APIs, or a token repository for cookie-authenticated ones), and flag that it will surface
+  during integration rather than at build time.
+
 - **CORS.** Once the SPA is served from a different origin than the API — S3/CloudFront in front of a
   Spring Boot back end, for example — CORS configuration becomes load-bearing. Note whether the
   chosen serving model creates a cross-origin situation at all, since serving the SPA from Spring
@@ -460,6 +495,72 @@ explicit rather than buried in markup.
   programmatically, other systems depend on the exact screen layout, and changing the UI breaks them.
   This is a coupling finding that belongs in the integration inventory (B9)
 
+## Target-Specific Considerations
+
+Everything above this point is framework-agnostic. These are the only places where the chosen
+framework changes the analysis. State them as **consequences of the customer's own combination of
+choices**, never as reasons to pick differently.
+
+### Hybrid embedding is not equally easy in every framework
+
+This matters because "hybrid" in this file means precisely *SPA components embedded in existing
+server-rendered pages*, so the framework interacts directly with a strategy we present.
+
+Vue has a documented advantage for integrating into existing server-rendered applications —
+progressive adoption into a page that already exists is a first-class use case for it. React is
+entirely capable of the same thing, but its centre of gravity is the full application, so mounting
+islands into legacy pages tends to involve more build and bundling setup. Angular's structure and
+bootstrap model make partial embedding the least natural of the three, and it is most at home owning
+the whole application shell.
+
+**How to report it:** if the customer has chosen hybrid **and** a framework whose strengths lie in
+owning the full page, say that the combination carries additional friction, and quantify it in terms
+of the build and bootstrap setup involved. Do **not** suggest changing framework, and do **not**
+suggest changing strategy. Both are the customer's decisions; the interaction between them is
+evidence.
+
+If the framework is **undecided** and hybrid is the likely strategy, note that the two decisions
+interact and should be taken together rather than separately.
+
+### Choosing a framework increasingly means choosing a meta-framework
+
+The prevailing pattern pairs each framework with a meta-framework — React with Next.js, Vue with
+Nuxt, Svelte with SvelteKit, and Angular with its own full-stack tooling. A large share of new React
+applications are built on Next.js rather than React alone.
+
+This matters to a migration because a meta-framework brings decisions a plain SPA does not:
+
+| Concern | Plain SPA | With a meta-framework |
+|---------|-----------|----------------------|
+| Rendering | Client-side only | Server-side rendering and hydration, with its own runtime |
+| Routing | A client-side router | File-system routing, which shapes project structure |
+| Hosting | Static assets from Spring Boot resources, or S3 + CloudFront | Needs a Node runtime, so a second deployable alongside the Spring Boot service |
+| Build integration | Fits the npm/Vite-into-Maven pattern described above | More involved; the Node server becomes part of the deployment topology |
+
+**Ask whether a meta-framework is in scope**, because it changes the target architecture diagram and
+the deployment model, not just the front-end code. If the customer has not considered it, that is an
+open question worth naming rather than an omission to fill in.
+
+### Component-library continuity is a source-side finding
+
+Whether the legacy component library has a successor is decided by what the application uses **today**,
+not by the target:
+
+| Current library | Continuity position |
+|-----------------|--------------------|
+| **PrimeFaces** | Same-vendor ports exist for both React and Vue, with recognisably similar component semantics. The most favourable starting point of the JSF options |
+| **RichFaces** | End-of-life with no successor in any target framework. Every component is re-implemented |
+| **IceFaces** | No successor in any target framework |
+| **Vaadin (classic)** | Server-driven component model with no SPA equivalent; Vaadin Flow keeps you in Java rather than moving to a SPA |
+| **ExtJS / Dojo / YUI** | Commercial or legacy JS component suites. Data grids are the usual sticking point |
+| **ASP.NET Web Forms server controls** | `GridView`, `Repeater`, `UpdatePanel` and wizards each need a client-side equivalent built or bought |
+
+**The recurring hard case is the enterprise data grid.** Legacy screens frequently rely on
+server-side paging, sorting, filtering, inline editing, grouping and export in a single component.
+Equivalents exist for every major framework, several commercially licensed. Inventory which grid
+features are actually used — that inventory, not the framework choice, is what sizes the work. Where
+a commercial grid licence would be needed, note it as a dependency finding for section 5.
+
 ## Validation Checklist
 
 A front-end migration analysis is complete when:
@@ -475,6 +576,6 @@ A front-end migration analysis is complete when:
 9. Target-side patterns are covered — BFF where screen density warrants it, build integration options, serving options with their CORS/auth implications, strangler routing with the cross-cutting session/auth requirement, and OpenAPI as the workstream seam
 10. Externally-known URLs are inventoried where deep links exist
 11. The accessibility baseline present today is reported, with formal compliance obligations named as a customer-input question
-12. **No comparison of React and Vue appears anywhere**, and no framework recommendation is made — the user's chosen framework is used throughout
+12. **No comparison of frameworks appears anywhere** — no feature tables, hiring-pool commentary, popularity rankings or AI-codegen comparisons — and no framework recommendation is made. The user's chosen framework is used throughout, or the choice is named as an open question where undecided
 13. All counts are presented as inventory, never as effort estimates, and no dollar amounts appear
 14. Findings surface in existing report sections 3 and 4; no new report section is introduced

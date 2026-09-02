@@ -221,6 +221,18 @@ as part of the interface inventory and note that screen replacement is out of sc
 | JCL IEBGENER (copy) | Spring Batch copy step / S3 copy |
 | JCL IDCAMS (VSAM utility) | Database DDL / Flyway migrations |
 | Checkpoint/Restart | Spring Batch chunk processing + restart |
+
+**⚠️ Spring Boot 4 changes the Spring Batch default, and it breaks restartability silently.** Under
+Boot 4, Spring Batch runs with **in-memory job metadata by default** — job and step execution state is
+no longer persisted to the database unless `spring-boot-starter-batch-jdbc` is used. Nothing fails at
+startup; the application runs, and then a restart cannot resume because there is no record of where the
+previous run stopped.
+
+This matters more on this path than on any other. Mainframe batch has mature checkpoint and restart
+behaviour that operations teams depend on, and the JCL `COND` and restart-step conventions above are
+built on it. Report this as a **required configuration item**, not a footnote: the target must use the
+JDBC job repository, and restart behaviour must be tested explicitly against a deliberately interrupted
+run.
 | COBOL Report Writer | JasperReports / Apache POI |
 | CA-7 / TWS Scheduling | AWS Step Functions / EventBridge Scheduler |
 | ABEND handling | Spring Batch `SkipPolicy` / `RetryPolicy` |
