@@ -11,7 +11,7 @@ Requirement IDs refer to `requirements.md`. Design sections refer to `design.md`
 - [x] **0.3** Set `"enabled": false` in `.kiro/hooks/update-readme-on-power-change.kiro.hook`. _(P2)_
 - [x] **0.4** Read both hook files back to confirm the toggle took — `.kiro/*` is
       git-excluded, so `git status` cannot verify this. _(P2)_
-- [ ] No backup task. `~/analyzer-fork-backup-20260901` verified present. _(P5)_
+- [x] No backup task needed — `~/analyzer-fork-backup-20260901` verified present. _(P5)_
 
 **Commit:** none (only untracked `.kiro/` changed).
 
