@@ -38,14 +38,14 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 ## Phase 3 — Java / J2EE depth for Spring Boot 4.1
 
-- [ ] **3.1** `j2ee-to-springboot-reactive.md`: target becomes Boot 4.1.x + Java 21/25 + Jakarta EE 11. _(R2.1, R2.3, R2.4)_
-- [ ] **3.2** Add the **Tomcat 11 / Servlet 6.1 / Boot 4** row to the namespace-compatibility table in `java-to-springboot.md`; add the three-position namespace model (javax, jakarta EE 9/10, jakarta EE 11). _(R2.5, design §3)_
-- [ ] **3.3** Replace the two-step sequencing with the **three-stage** sequence, marking Boot 3.5 a mandatory *transit* version and explaining deprecation-as-error. _(R2.6, design §3)_
-- [ ] **3.4** Add the Boot 4 breaking-change cluster: starter modularisation + `*Properties` package moves, Jackson 3, Spring Security 7 (lambda DSL, CSRF default), test-annotation removals, Spring Batch in-memory, Hibernate 7.4 / Spring Data JPA 4 lazy-loading. _(R2.7)_
-- [ ] **3.5** `wildfly-to-springboot.md`: promote **Undertow removal to a named hard blocker** with no workaround. _(R2.8)_
-- [ ] **3.6** `wildfly-to-springboot.md`: correct the "already positioned" advantage — WildFly 27+/EAP 8 are Jakarta EE **10**, nearer EE 11 but not there. _(R2.9)_
-- [ ] **3.7** Add OpenRewrite's Boot 4 recipe to tooling guidance. _(R2.10)_
-- [ ] **3.8** Sweep `websphere-`, `weblogic-`, `wildfly-`, `java-to-springboot.md` and `cobol-to-java.md` for Boot 3 / Java 17 target claims. _(R2.1, R2.3)_
+- [x] **3.1** `j2ee-to-springboot-reactive.md`: target becomes Boot 4.1.x + Java 21/25 + Jakarta EE 11. _(R2.1, R2.3, R2.4)_
+- [x] **3.2** Add the **Tomcat 11 / Servlet 6.1 / Boot 4** row to the namespace-compatibility table in `java-to-springboot.md`; add the three-position namespace model (javax, jakarta EE 9/10, jakarta EE 11). _(R2.5, design §3)_
+- [x] **3.3** Replace the two-step sequencing with the **three-stage** sequence, marking Boot 3.5 a mandatory *transit* version and explaining deprecation-as-error. _(R2.6, design §3)_
+- [x] **3.4** Add the Boot 4 breaking-change cluster: starter modularisation + `*Properties` package moves, Jackson 3, Spring Security 7 (lambda DSL, CSRF default), test-annotation removals, Spring Batch in-memory, Hibernate 7.4 / Spring Data JPA 4 lazy-loading. _(R2.7)_
+- [x] **3.5** `wildfly-to-springboot.md`: promote **Undertow removal to a named hard blocker** with no workaround. _(R2.8)_
+- [x] **3.6** `wildfly-to-springboot.md`: correct the "already positioned" advantage — WildFly 27+/EAP 8 are Jakarta EE **10**, nearer EE 11 but not there. _(R2.9)_
+- [x] **3.7** Add OpenRewrite's Boot 4 recipe to tooling guidance. _(R2.10)_
+- [x] **3.8** Sweep `websphere-`, `weblogic-`, `wildfly-`, `java-to-springboot.md` and `cobol-to-java.md` for Boot 3 / Java 17 target claims. _(R2.1, R2.3)_
 
 **Commit.**
 

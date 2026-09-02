@@ -6,7 +6,7 @@ inclusion: manual
 
 ## Objective
 
-Migrate .NET Framework applications (ASP.NET MVC, Web Forms, Web API, WCF) to Spring Boot 3.x with Java 17 using a fully reactive architecture, completely eliminating all .NET Framework and Windows-specific dependencies, targeting AWS container-based deployments optimized for Linux and Graviton processors.
+Migrate .NET Framework applications (ASP.NET MVC, Web Forms, Web API, WCF) to Spring Boot 4.1.x with Java 21 or 25, completely eliminating all .NET Framework and Windows-specific dependencies, targeting AWS container-based deployments optimized for Linux and Graviton processors.
 
 **IMPORTANT — Cross-Platform Migration:** This is a cross-language, cross-ecosystem migration (C# → Java). It is fundamentally more complex than same-ecosystem migrations (.NET Framework → .NET 10, or WebSphere → Spring Boot). The report MUST prominently acknowledge this complexity and surface the risks and effort items that flow from it.
 
@@ -680,7 +680,7 @@ flowchart LR
 
 ### Phase 1: Project Structure and Language Foundation
 
-1. Create Maven/Gradle project with Spring Boot 3.x parent, Java 17
+1. Create Maven/Gradle project with the Spring Boot 4.1.x parent, Java 21 or 25
 2. Establish Java package structure mirroring .NET namespaces
 3. Add Spring Boot reactive starters (webflux, r2dbc, rsocket)
 4. Document C# to Java translation conventions for the team

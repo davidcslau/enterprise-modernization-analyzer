@@ -6,7 +6,7 @@ inclusion: manual
 
 ## Objective
 
-Migrate IBM WebSphere Application Server-based J2EE applications to Spring Boot 3.x with Java 17 using a fully reactive architecture, targeting AWS container-based deployments optimized for Graviton processors.
+Migrate IBM WebSphere Application Server-based J2EE applications to Spring Boot 4.1.x with Java 21 or 25, targeting AWS container-based deployments optimized for Graviton processors.
 
 ## Platform Detection
 
@@ -167,7 +167,7 @@ no direct successor exists, and the replacement or isolation option.
 
 - `javax.*` packages → `jakarta.*` packages
 - Requires dependency updates across the board
-- Spring Boot 3.x uses Jakarta EE 9+
+- Spring Boot 3.x uses Jakarta EE 9+; **Spring Boot 4.1 requires Jakarta EE 11** (Servlet 6.1, JPA 3.2, Bean Validation 3.1)
 
 ## Implementation Phases
 
@@ -181,7 +181,7 @@ no direct successor exists, and the replacement or isolation option.
 
 ### Phase 1: Project Structure Migration
 
-1. Update to Spring Boot 3.x parent
+1. Update to the Spring Boot 4.1.x parent
 2. Remove ALL J2EE and WebSphere dependencies
 3. Add Spring Boot reactive starters
 4. Configure multi-architecture Docker build

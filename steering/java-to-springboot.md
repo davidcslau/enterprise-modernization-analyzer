@@ -2,11 +2,11 @@
 inclusion: manual
 ---
 
-# Java 8/11 to Spring Boot 3.x + AWS Modernization
+# Java 8/11 to Spring Boot 4.1 + AWS Modernization
 
 ## Objective
 
-Migrate generic server-side Java applications (Servlet/JSP on Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Java SE batch, and similar non-application-server workloads) to Spring Boot 3.x with Java 17 or 21, targeting AWS container-based deployments optimized for Graviton processors.
+Migrate generic server-side Java applications (Servlet/JSP on Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Java SE batch, and similar non-application-server workloads) to Spring Boot 4.1.x with Java 21 or 25, targeting AWS container-based deployments optimized for Graviton processors.
 
 This guide applies when a Java codebase exists WITHOUT strong IBM WebSphere or Oracle WebLogic markers. For application-server-anchored workloads, use `websphere-to-springboot.md` or `weblogic-to-springboot.md` instead.
 
@@ -98,7 +98,7 @@ Once a Java codebase is confirmed, identify the web/runtime framework to tune mi
 ## Target Architecture
 
 All Java migrations target:
-- Spring Boot 3.x with Java 17 (baseline) or Java 21 (recommended for new projects)
+- Spring Boot 4.1.x with Java 21 or Java 25 (Java 17 is the floor, but not the recommendation)
 - Reactive architecture (WebFlux, R2DBC, Reactor) where suitable, or servlet stack (Spring MVC + Tomcat embedded) where blocking I/O dominates
 - AWS container-based deployments (ECS Fargate / EKS)
 - Graviton processor optimization
@@ -132,7 +132,7 @@ flowchart TD
     HasSpring{Spring Boot Version?}
     NoSpring[No Spring / Plain Servlet / Struts / JSF / Dropwizard]
 
-    SpringBoot3[Spring Boot 3.x<br/>Already Modern]
+    SpringBoot3[Spring Boot 3.x<br/>One stage from target]
     SpringBoot2[Spring Boot 2.x<br/>Upgrade Path]
     SpringBoot1[Spring Boot 1.x<br/>Multi-Step Upgrade]
     SpringLegacy[Spring 4.x / 5.x<br/>No Boot]
@@ -288,9 +288,9 @@ These are capabilities to leverage during and after migration:
 
 ### GC and Runtime Tuning
 
-Java 8 era tuning rarely transfers. Recalibrate on Java 17/21:
+Java 8 era tuning rarely transfers. Recalibrate on Java 21/25:
 
-| Aspect | Java 8 Default | Java 17/21 Recommendation |
+| Aspect | Java 8 Default | Java 21/25 Recommendation |
 |--------|---------------|---------------------------|
 | Default collector | Parallel GC | G1GC (default since JDK 9) |
 | Low-pause GC | CMS (removed in JDK 14) | ZGC or Shenandoah |
@@ -306,9 +306,9 @@ Java 8 era tuning rarely transfers. Recalibrate on Java 17/21:
 | Log4j 2.x (pre-2.17) | Log4Shell (CVE-2021-44228) | Log4j 2.17.1+ |
 | Apache Commons Collections 3.x | Deserialization CVEs | 4.x or replacement |
 | Jackson 2.9 / earlier | Multiple CVEs | Jackson 2.15+ (aligned with Spring Boot 3) |
-| Hibernate 5.x | javax.persistence | Hibernate 6.x (jakarta.persistence) |
-| Spring Framework 4.x / 5.x | javax.* namespace | Spring Framework 6.x (jakarta.*) |
-| Spring Security 5.x | javax.servlet | Spring Security 6.x (jakarta.servlet) |
+| Hibernate 5.x | javax.persistence | Hibernate 7.4 (jakarta.persistence, JPA 3.2) — the version managed by Boot 4.1 |
+| Spring Framework 4.x / 5.x | javax.* namespace | Spring Framework 7.x (jakarta.*, Jakarta EE 11) |
+| Spring Security 5.x | javax.servlet | Spring Security 7.x — lambda DSL only, CSRF on APIs by default |
 | JUnit 4 | Legacy runner model | JUnit 5 (Jupiter) |
 | Mockito 1.x / 2.x | JDK 17 reflection issues | Mockito 5.x (mockito-core) |
 | Lombok 1.18.22 or older | Fails on JDK 17+ | Lombok 1.18.30+ |
@@ -317,7 +317,7 @@ Java 8 era tuning rarely transfers. Recalibrate on Java 17/21:
 
 ## javax → jakarta Namespace Migration
 
-Spring Boot 3.x and Spring Framework 6.x require the Jakarta EE 9+ namespace. This is the single largest breaking change in the migration.
+Spring Boot 3.x and Spring Framework 6.x require the Jakarta EE 9+ namespace; Spring Boot 4.1 and Spring Framework 7 raise that to the **Jakarta EE 11** baseline. The `javax` → `jakarta` rename is the single largest mechanical change in the migration.
 
 ### Affected Packages
 
@@ -366,8 +366,8 @@ Tools that help:
 | Struts 1 Actions | `@Controller` + full rewrite of action forms |
 | JSF / Jakarta Faces | Spring MVC + Thymeleaf, or SPA frontend (React/Angular/Vue) + REST |
 | Spring MVC (XML-config, pre-Boot) | Spring Boot 3 auto-configuration + `@SpringBootApplication` |
-| Spring Boot 1.x | Spring Boot 3.x (two-step: 1.x → 2.7 → 3.x) |
-| Spring Boot 2.x | Spring Boot 3.x (namespace + version alignment) |
+| Spring Boot 1.x | Spring Boot 4.1.x (staged: 1.x → 2.7 → 3.5 → 4.1) |
+| Spring Boot 2.x | Spring Boot 4.1.x (staged: 2.x → 3.5 → 4.1; namespace at the 3.5 stage) |
 | Dropwizard | Spring Boot 3 WebFlux or MVC |
 | JAX-RS / Jersey (standalone) | Spring MVC (preferred) or keep Jersey via `spring-boot-starter-jersey` as a transitional bridge |
 | Vaadin (classic) | Vaadin Flow on Spring Boot 3, or SPA frontend |
@@ -379,7 +379,7 @@ Tools that help:
 | Source | Target |
 |--------|--------|
 | Plain JDBC + `DriverManager` | `JdbcTemplate` or Spring Data JPA |
-| Hibernate 5.x (javax.persistence) | Hibernate 6.x (jakarta.persistence) or Spring Data JPA |
+| Hibernate 5.x (javax.persistence) | Hibernate 7.4 (jakarta.persistence) or Spring Data JPA 4 |
 | MyBatis 3.4 | MyBatis-Spring-Boot 3.x |
 | JPA 2.x (javax) | JPA 3.x (jakarta) via Spring Data JPA 3.x |
 | jOOQ 3.14 or earlier | jOOQ 3.19+ (jakarta-aware) |
@@ -408,10 +408,10 @@ Tools that help:
 
 | Source | Target |
 |--------|--------|
-| Spring Security 5.x (javax.servlet) | Spring Security 6.x (jakarta.servlet) |
+| Spring Security 5.x (javax.servlet) | Spring Security 7.x (jakarta.servlet) |
 | Container-managed auth (`web.xml` security constraints) | Spring Security config class |
 | JAAS login modules | Spring Security `AuthenticationProvider` |
-| Shiro | Spring Security 6.x |
+| Shiro | Spring Security 7.x |
 | Custom filter-based auth | Spring Security filter chain |
 | Basic/Form auth | JWT / OAuth2 via Spring Security OAuth2 Resource Server |
 | LDAP binding | `spring-security-ldap` or Amazon Cognito federated |
@@ -463,10 +463,27 @@ This is a transition state and should be retired in favor of Path A once ops too
 
 ### Tomcat Version Compatibility
 
-| Tomcat | Servlet API | Namespace | Spring Boot Compatible |
-|--------|-------------|-----------|------------------------|
-| 8.5.x / 9.x | 3.1 / 4.0 | javax.servlet | Spring Boot 2.x only |
-| 10.0.x / 10.1.x | 5.0 / 6.0 | jakarta.servlet | Spring Boot 3.x |
+| Tomcat | Servlet API | Namespace | Highest compatible Spring Boot |
+|--------|-------------|-----------|-------------------------------|
+| 8.5.x / 9.x | 3.1 / 4.0 | `javax.servlet` | **Spring Boot 2.x only** |
+| 10.0.x / 10.1.x | 5.0 / 6.0 | `jakarta.servlet` | **Spring Boot 3.x** |
+| **11.x** | **6.1** | `jakarta.servlet` | **Spring Boot 4.x** |
+
+**The namespace question now has three positions, not two.** The old binary — `javax` bad,
+`jakarta` good — is no longer sufficient:
+
+| Position | Meaning | Distance to the Boot 4.1 target |
+|----------|---------|--------------------------------|
+| `javax.*` (Jakarta EE 8 and earlier) | The rename has not happened | Namespace migration **and** an EE 11 version step |
+| `jakarta.*` at Jakarta EE 9 or 10 | The hard rename is done | Still a version step: EE 11 raises Servlet to 6.1, JPA to 3.2 and Bean Validation to 3.1 |
+| `jakarta.*` at Jakarta EE 11 | Already on the target baseline | Container and dependency alignment only |
+
+Report which of the three applies. An application already on `jakarta.*` is materially closer, but
+"already migrated to jakarta" is not the same as "ready for Boot 4" and the report should not let
+that inference stand.
+
+**Embedded container note:** Boot 4 removed Undertow support entirely, so Undertow is not an option
+on the target side regardless of the source container. Tomcat and Jetty are the servlet choices.
 
 ## Required Java Analysis Depth
 
@@ -490,20 +507,86 @@ transfer.
 Where the build and the runtime disagree on version — a common finding — report both. It usually
 means the deployed artifact is not what the build configuration describes.
 
-### The Two-Step Question — Is It Avoidable?
+### The Staged Sequence — How Many Stages, and Which Are Optional
 
-State this explicitly; it is one of the highest-value findings on any Java path and the reader should
-not have to infer it:
+State this explicitly; it is one of the highest-value findings on any Java path and the reader
+should not have to infer it. The target is **Spring Boot 4.1.x on Java 21 or 25**, and reaching it
+from a Java 8 codebase is a **three-stage** sequence:
+
+```
+Stage 1   Java 8 → 21 or 25          JDK upgrade; javax.* left intact
+Stage 2   Spring Boot 2.7 → 3.5      javax → jakarta namespace, plus deprecation cleanup
+Stage 3   Spring Boot 3.5 → 4.1      Jakarta EE 11, starter modularisation, Jackson 3, Security 7
+```
 
 | Starting position | Realistic route |
 |-------------------|-----------------|
-| Java 8 + `javax.*` + Spring 4/5 or non-Spring | **Two steps: Java 8 → 17, then Spring Boot 2.7 → 3.x.** Each stage carries its own validation cycle. Attempting both simultaneously conflates two independent sets of breaking changes |
-| Java 11 + `javax.*` + Spring Boot 2.x | Two steps, but the JDK step is smaller |
-| Java 17 + `javax.*` + Spring Boot 2.7 | One step: the namespace and Boot 3 migration only |
-| Java 17+ + `jakarta.*` | Already positioned for Spring Boot 3 |
+| Java 8 + `javax.*` + Spring 4/5 or non-Spring | **All three stages.** Each carries its own validation cycle; attempting them together conflates three independent sets of breaking changes |
+| Java 11 + `javax.*` + Spring Boot 2.x | All three stages, but the JDK step is smaller |
+| Java 17 + `javax.*` + Spring Boot 2.7 | Stages 2 and 3 |
+| Java 17/21 + `jakarta.*` + Spring Boot 3.0–3.4 | Upgrade within 3.x to 3.5, then stage 3 |
+| Java 21/25 + `jakarta.*` + Spring Boot 3.5 | Stage 3 only |
+| Java 21/25 + `jakarta.*` + Spring Boot 4.x | Already on the target line; confirm it is 4.1.x, not 4.0 |
 
-Where a two-step is unavoidable, say so plainly and name both stages. Report it as sequencing
-evidence, never as an hour or day figure.
+#### ⛔ Stage 2 cannot be skipped, even though Spring Boot 3.5 is itself out of support
+
+This is the least obvious and most consequential point in the sequence, so state it plainly rather
+than leaving the reader to discover it.
+
+**Spring Boot 4 removes every API that was deprecated anywhere in Boot 3.x, with no grace period.**
+A Boot 2.7 codebase jumping straight to 4.1 therefore hits a wall of compilation errors with no map
+of what needs changing — the deprecation warnings that would have told you are only emitted by
+Boot 3.x, which you skipped.
+
+So the sequence is:
+
+1. Land on the **latest Boot 3.x (3.5.x)**
+2. Turn deprecation warnings into **build errors** (`-Werror` in javac, or `failOnWarning` in the
+   Maven compiler plugin)
+3. Fix every deprecation the build now surfaces
+4. **Then** bump to Boot 4.1
+
+**Boot 3.5 is a transit version, not a destination.** Its OSS support ended 30 June 2026, so the
+report must not present it as somewhere to stop and stay — but "3.x is EOL" must equally not be read
+as "skip it". Passing *through* 3.5 is what makes stage 3 tractable. Where a programme is long
+enough that dwelling on 3.5 is unavoidable, note that commercial support for 3.5 exists as a bridge,
+and that this is a customer commercial decision rather than an analyzer recommendation.
+
+Where a multi-stage route applies, name every stage. Report it as sequencing evidence, never as an
+hour or day figure.
+
+### Spring Boot 4 — the Breaking-Change Cluster
+
+Stage 3 is not a version bump. Report these as a named cluster in section 4, because several fail
+**silently** rather than at compile time, and because they land on things this analyzer already
+tells teams to establish — a behavioural test baseline, in particular.
+
+| Change | What breaks, and how it surfaces |
+|--------|----------------------------------|
+| **Jakarta EE 11 baseline** | Servlet 6.1, JPA 3.2, Bean Validation 3.1. An application on EE 9/10 has done the namespace rename but still has a version step |
+| **Servlet 6.1 floor** | **Tomcat 11 or Jetty 12.1.** See the container table below |
+| **Undertow support removed** | No Servlet 6.1 release exists for it. There is **no workaround** short of moving to Tomcat or Jetty — a hard blocker where present |
+| **All Boot 3.x deprecations removed** | Compile errors, in bulk, unless stage 2 cleaned them up first |
+| **Starter modularisation** | The monolithic autoconfigure jar is split per technology (it shrank from roughly 1,470 classes to 258). Starters are renamed — web MVC becomes `spring-boot-starter-webmvc`, RestClient/RestTemplate move to `-restclient`, WebClient to `-webclient`, Kafka to `-kafka`, and observability splits into micrometer-metrics, opentelemetry and zipkin starters. Every starter gains a `-test` companion. **Beans previously found transitively may simply be absent — failing at runtime with `NoSuchBeanDefinitionException`, not at compile time** |
+| **`*Properties` classes moved package** | Out of `org.springframework.boot.autoconfigure.<area>` into `org.springframework.boot.<module>.autoconfigure`, and the mapping is not mechanical. `SecurityProperties` is the worst case: it moved *and* lost its constants, which were promoted to a new `SecurityFilterProperties`; `IGNORED_ORDER` was removed outright. Only the compiler finds these |
+| **Configuration properties renamed/removed** | Add `spring-boot-properties-migrator` for the first runs — it reports diagnostics and temporarily maps old names. Remove it before shipping |
+| **Jackson 3 is the default** | Group and package move from `com.fasterxml.jackson` to `tools.jackson`; exceptions become **unchecked**, so existing `catch (IOException)` blocks stop catching serialisation failures; `@JsonComponent` → `@JacksonComponent`, `@JsonMixin` → `@JacksonMixin`; `spring.jackson.read.*`/`write.*` move under `spring.jackson.json.*`. **Serialised output can change shape even when everything compiles** — diff JSON for key DTOs as part of the upgrade test pass. Escape hatches exist (`spring.jackson.use-jackson2-defaults=true`, and a deprecated Jackson 2 module) |
+| **Spring Security 7** | The `HttpSecurity` lambda DSL is the only supported style; method chaining and `.and()` are **removed**, so every occurrence is a compile blocker. **CSRF now applies to API endpoints by default** — stateless REST APIs that never sent a token start returning 403 |
+| **Test suite breakage** | `@MockBean`/`@SpyBean` removed → `@MockitoBean`/`@MockitoSpyBean`; `@SpringBootTest` no longer auto-configures MockMvc (add `@AutoConfigureMockMvc`) or TestRestTemplate; the deprecated Mockito test-execution listener is gone, so plain `@Mock` fields silently stop being initialised. **Three of these fail silently or confusingly rather than cleanly** |
+| **Spring Batch in-memory by default** | Job metadata stops being persisted unless you move to `spring-boot-starter-batch-jdbc`. Silently breaks restartability |
+| **Hibernate 7.4 / Spring Data JPA 4** | Under Boot 4.1. Spring Data 4.x changes lazy-loading behaviour for some proxy configurations, so N+1 problems previously masked by eager loading can surface |
+| **Other removals** | `HttpMessageConverters` deprecated; Spring Session Hazelcast and MongoDB support removed; Spock integration removed; embedded executable-jar launch scripts gone |
+
+**Sequencing consequence for the test baseline.** This analyzer treats a behavioural test baseline
+as the acceptance criterion for any migration. Boot 4 breaks the test suite in four specific ways,
+so the baseline must be **re-established on the target** before it can prove equivalence. Run the
+test suite immediately after the version bump, before touching production code, so every failure is
+attributable to the upgrade.
+
+**Tooling.** The OpenRewrite recipe for the Boot 4 upgrade automates a large share of the mechanical
+work — starter renames, property renames, annotation renames. It does not find the semantic changes
+(Jackson output shape, CSRF posture, Batch persistence), so treat it as a first pass followed by
+review, not as a completed migration.
 
 ### Framework Stack and Its Relative Migration Cost
 
@@ -985,7 +1068,7 @@ Invocation: `java -jar app.jar --job=nightly-close`
 
 For jobs that need chunk processing, restartability, job repository persistence, or retry/skip semantics, adopt Spring Batch. Note:
 
-- Spring Batch 5.x aligns with Spring Boot 3.x and Java 17+
+- Spring Batch aligns with the Boot line in use; under Boot 4 it defaults to **in-memory** job metadata, so persistence requires `spring-boot-starter-batch-jdbc`
 - The job repository schema must be initialized (use Flyway/Liquibase or `spring.batch.jdbc.initialize-schema=always` for dev)
 - Migrate existing job logic into `Tasklet` or chunk-oriented `ItemReader` / `ItemProcessor` / `ItemWriter` components
 - Use `JobLauncherApplicationRunner` auto-configuration to kick off jobs from the command line
@@ -1397,7 +1480,7 @@ public class Order {
 }
 ```
 
-**After (Java 17 + Hibernate 6):**
+**After (Java 21/25 + Hibernate 7):**
 ```java
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -1611,7 +1694,7 @@ graph TB
 
     subgraph Target["Target State - AWS"]
         ECS[Amazon ECS Fargate / EKS]
-        SB["Spring Boot 3.x<br/>Java 17/21 Corretto<br/>Graviton ARM64"]
+        SB["Spring Boot 4.1.x<br/>Java 21/25 Corretto<br/>Graviton ARM64"]
         RDS[(Amazon Aurora PostgreSQL)]
         SQS[Amazon SQS / MSK]
         COG[Amazon Cognito]
@@ -1670,7 +1753,7 @@ A complete Java-to-Spring-Boot modernization should meet:
 2. Zero `javax.*` imports outside of jakarta-compatible transitive shims
 3. Zero references to removed JDK modules (`java.xml.bind`, `java.activation`, `java.corba`, etc.)
 4. Zero `sun.*` / JDK-internal API usage
-5. Spring Boot 3.x starter dependencies (if Spring-based)
+5. Spring Boot 4.1.x starter dependencies (if Spring-based)
 6. Executable JAR with embedded servlet container (or transitional WAR on Tomcat 10+)
 7. Logback or Log4j 2.x (no Log4j 1.x)
 8. Spring Boot Actuator endpoints exposed for health, info, metrics

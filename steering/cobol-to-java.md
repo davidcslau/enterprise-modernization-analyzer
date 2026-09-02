@@ -6,7 +6,7 @@ inclusion: manual
 
 ## Objective
 
-Migrate IBM Mainframe COBOL applications (CICS online, batch, DB2, VSAM) to Java 17+ with Spring Boot 3.x, targeting AWS container-based deployments optimized for Graviton processors.
+Migrate IBM Mainframe COBOL applications (CICS online, batch, DB2, VSAM) to Spring Boot 4.1.x on Java 21 or 25, targeting AWS container-based deployments optimized for Graviton processors.
 
 ## Platform Detection
 
@@ -63,7 +63,7 @@ flowchart TD
     BatchPath[JCL/Batch to Spring Batch Jobs]
     SimplePath[Simple Refactor: Direct Translation]
     ComplexPath[Complex Refactor: Decompose to Microservices]
-    TargetArch([Target: Spring Boot 3.x + Java 17 on ECS Fargate / Graviton])
+    TargetArch([Target: Spring Boot 4.1.x + Java 21/25 on ECS Fargate / Graviton])
 
     Start --> CheckCICS
     CheckCICS -- Yes --> CICSPath
@@ -246,7 +246,7 @@ In some cases, certain mainframe components cannot be directly migrated to Java.
 ```mermaid
 flowchart LR
     subgraph Modern["Modernized Stack (ECS/EKS)"]
-        App["Spring Boot 3.x App<br/>(Java 17 on Linux Container)"]
+        App["Spring Boot 4.1.x App<br/>(Java 21/25 on Linux Container)"]
     end
     subgraph Legacy["Legacy Sidecar (EC2 / M2 Replatform)"]
         Wrapper["API Wrapper<br/>(REST/gRPC)"]
@@ -305,7 +305,7 @@ When this pattern applies, include in the report:
 7. Identify dead code and unused programs for elimination
 
 ### Phase 1: Foundation and Infrastructure
-1. Set up Spring Boot 3.x project structure with Java 17
+1. Set up Spring Boot 4.1.x project structure with Java 21 or 25
 2. Configure Aurora PostgreSQL database
 3. Set up Spring Security with AWS Cognito
 4. Create CI/CD pipeline (CodePipeline, CodeBuild)
@@ -482,7 +482,7 @@ graph TB
 
     subgraph "Target State: AWS"
         ECS[Amazon ECS Fargate / Graviton]
-        SB[Spring Boot 3.x / Java 17]
+        SB[Spring Boot 4.1.x / Java 21-25]
         RDS[(Amazon Aurora PostgreSQL)]
         BATCH[Spring Batch on ECS]
         SF[AWS Step Functions]

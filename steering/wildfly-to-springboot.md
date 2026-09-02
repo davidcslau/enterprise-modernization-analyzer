@@ -6,18 +6,18 @@ inclusion: manual
 
 ## Objective
 
-Migrate Red Hat WildFly and JBoss EAP-based J2EE/Jakarta EE applications to Spring Boot 3.x with Java 17 using a fully reactive architecture, targeting AWS container-based deployments optimized for Graviton processors.
+Migrate Red Hat WildFly and JBoss EAP-based J2EE/Jakarta EE applications to Spring Boot 4.1.x with Java 21 or 25, targeting AWS container-based deployments optimized for Graviton processors.
 
 ## The WildFly Starting Position Is Genuinely Different
 
 **Do not carry the WebSphere or WebLogic risk posture across to this path unexamined.** WildFly and
-recent JBoss EAP are frequently *already closer* to Spring Boot 3 than either commercial competitor,
+recent JBoss EAP are frequently *already closer* to Spring Boot than either commercial competitor,
 and reporting the effort profile as though it were identical misrepresents the codebase.
 
 | Where WildFly is genuinely ahead | Why it matters |
 |----------------------------------|----------------|
 | **Hibernate is the native JPA provider** | WebSphere ships OpenJPA and WebLogic ships TopLink/EclipseLink, both of which need a provider change on the way to Spring Data. WildFly applications are usually already on Hibernate, so the ORM layer often needs a version upgrade rather than a replacement |
-| **Jakarta EE alignment is ahead** | WildFly moved to the `jakarta.*` namespace early (WildFly 27+ is Jakarta EE 10). An application already on `jakarta.*` skips the single most pervasive mechanical change in a Spring Boot 3 migration |
+| **Jakarta EE alignment is ahead, but check the level** | WildFly moved to the `jakarta.*` namespace early — WildFly 27+ and JBoss EAP 8 are **Jakarta EE 10**. That skipped the single most pervasive mechanical change, the `javax` → `jakarta` rename. It does **not** mean the application is on the Spring Boot 4 baseline: Boot 4.1 requires **Jakarta EE 11** (Servlet 6.1, JPA 3.2, Bean Validation 3.1), so an EE 10 application still has a version step. Report the EE level, not just the namespace |
 | **CDI is the standard idiom** | CDI `@Inject` maps almost directly onto Spring's dependency injection. Applications built on CDI rather than EJB 2.x remote interfaces translate far more mechanically |
 | **JAX-RS via RESTEasy is common** | Where a REST layer already exists, the API surface is preserved and only the framework binding changes — and the front end can be migrated independently |
 | **Undertow is already a lightweight embedded-style container** | The mental and operational distance to an embedded Netty or Tomcat is much shorter than from a full WebSphere ND cell |
@@ -99,6 +99,32 @@ The single most consequential detection result on this path. Establish:
 **Report the namespace position as an explicit finding**, because it determines whether a
 Java 8 → 17 then Spring Boot 2 → 3 two-step is unavoidable or avoidable.
 
+## ⛔ Hard Blocker: Undertow Has No Path Forward
+
+**This is the one WildFly-specific item with no workaround, and it is specific to Spring Boot 4.**
+Report it as a named blocker, not as a row in the strategy bank.
+
+Spring Boot 4 requires Servlet 6.1 (via the Jakarta EE 11 baseline). **Undertow has no Servlet 6.1
+release, and Boot 4 removed support for it entirely.** There is no compatibility flag, no shim and no
+transitional mode. The servlet container must become **Tomcat 11 or Jetty 12.1**, or the application
+must move to the reactive stack on Netty.
+
+Why this matters more here than the equivalent finding on other paths:
+
+- Undertow is WildFly's **default** web subsystem, so almost every WildFly application is affected,
+  not just those that used it deliberately
+- Where application code touches `io.undertow.*` directly — custom handlers, filters, listeners —
+  that code is rewritten, not reconfigured
+- It removes what would otherwise be a genuine WildFly advantage. Undertow is lightweight and
+  embedded-style, so the operational distance to an embedded container looked short; on Boot 4 that
+  familiarity is worth nothing because the component itself is gone
+
+**What to report:** confirm whether Undertow is in use (it is, unless the deployment was
+reconfigured); locate every direct `io.undertow.*` usage; and state the container decision as a
+prerequisite of the Boot 4 target rather than an optimisation. If a programme wants to stage the
+work, the container swap can be done on Boot 3.x first, where Undertow is still supported — that is
+a sequencing option worth surfacing.
+
 ## Migration Strategy Bank
 
 ### Application Server → Spring Boot
@@ -107,7 +133,7 @@ Java 8 → 17 then Spring Boot 2 → 3 two-step is unavoidable or avoidable.
 |-------------------------------|------------------------|
 | **JBoss Modules classloading** (`jboss-deployment-structure.xml`, `module.xml`) | **Flat Maven/Gradle classpath.** The isolation guarantees disappear — see the dedicated section below |
 | **`standalone.xml` subsystems** | `application.yml` plus Spring Boot auto-configuration and starters |
-| **Undertow** (web subsystem) | Embedded Netty (reactive) or embedded Tomcat (servlet) |
+| **Undertow** (web subsystem) | Embedded Tomcat or Jetty (servlet) / Netty (reactive). **Undertow itself is not an option** — see the blocker below |
 | **Undertow handlers / filters** | Spring `WebFilter` (reactive) or `HandlerInterceptor` (servlet) |
 | EJB Stateless Session Beans | Spring `@Service` with reactive return types |
 | EJB Stateful Session Beans | Spring service + ElastiCache for Redis for state |
@@ -311,7 +337,7 @@ as evidence for the customer's own business case:
 
 - `javax.*` packages → `jakarta.*` packages
 - **Check the starting position first.** WildFly 27+ and EAP 8 are already on `jakarta.*`, in which case this change may be substantially or entirely done. WildFly 26 and earlier, and EAP 7.x, are on `javax.*`
-- Spring Boot 3.x requires Jakarta EE 9+ and Java 17+
+- Spring Boot 3.x requires Jakarta EE 9+ and Java 17+; **Spring Boot 4.1 requires Jakarta EE 11 and recommends Java 21/25**
 - Where the codebase is on `javax.*` and Java 8, the two-step (Java 8 → 17, then Spring Boot 2.7 → 3.x) is generally unavoidable — see the shared J2EE depth section
 
 ## Shared J2EE / Java Depth — Required for This Path
@@ -340,7 +366,7 @@ not optional, and the WildFly-specific detection above does not replace it.
 
 ### Phase 1: Project Structure Migration
 
-1. Update to the Spring Boot 3.x parent
+1. Update to the Spring Boot 4.1.x parent
 2. Promote every `provided`-scope and module-supplied dependency to an explicit managed dependency
 3. Remove ALL WildFly/JBoss server dependencies and descriptors
 4. Resolve version conflicts previously masked by module isolation
@@ -631,7 +657,7 @@ graph TB
 
     subgraph Target["Target State - AWS"]
         ECS["Amazon ECS / EKS<br/>(Graviton)"]
-        SB["Spring Boot 3.x Reactive<br/>(embedded Netty)"]
+        SB["Spring Boot 4.1.x<br/>(embedded Tomcat or Netty)"]
         RDS[("Amazon RDS / Aurora<br/>engine per confirmed DB scope")]
         MQ["Amazon MQ / SQS / MSK"]
         REDIS["Amazon ElastiCache<br/>(Redis)"]
@@ -680,7 +706,7 @@ graph TB
 11. Messaging served by an external broker; no embedded broker in the container
 12. Security implemented with Spring Security; no security domains, realms or JAAS login modules remain
 13. Distributed XA transactions replaced by Saga or Outbox, with the consistency model documented
-14. Namespace fully on `jakarta.*` and the build on Java 17+
+14. Namespace fully on `jakarta.*` at **Jakarta EE 11**, and the build on Java 21 or 25
 15. Container runs on both x86_64 and ARM64 (Graviton)
 16. All tests pass with WebTestClient and StepVerifier
 

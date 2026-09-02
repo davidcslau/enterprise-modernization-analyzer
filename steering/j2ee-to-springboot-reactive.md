@@ -29,20 +29,37 @@ section.
 ### Application Server, Version and javax/jakarta Position
 
 Report the server and version precisely, and state its namespace position, because together they
-decide whether a two-step migration is unavoidable:
+decide how many upgrade stages are unavoidable:
 
-| Server / container | Namespace | Spring Boot reachable directly |
-|--------------------|-----------|-------------------------------|
-| Tomcat 8.5 / 9.x | `javax.*` | **Spring Boot 2.x only.** Boot 3 requires the namespace migration first |
-| Tomcat 10.0 / 10.1+ | `jakarta.*` | **Spring Boot 3.x enabled** |
-| WildFly 26 and earlier, JBoss EAP 7.x | `javax.*` | Boot 2.x first, or namespace migration as part of the move |
-| WildFly 27+, JBoss EAP 8 | `jakarta.*` | Boot 3.x reachable directly |
-| JBoss AS 5/6, EAP 5/6 | `javax.*`, older EE profile | Furthest away; expect EJB 2.x and legacy security |
+| Server / container | Namespace | Jakarta EE level | Distance to the Boot 4.1 target |
+|--------------------|-----------|------------------|--------------------------------|
+| Tomcat 8.5 / 9.x | `javax.*` | EE 8 | Namespace migration, then the EE 11 step. Boot 2.x is the ceiling until the rename happens |
+| Tomcat 10.0 / 10.1 | `jakarta.*` | EE 9 / 10 | Rename done; still an EE 11 version step. Boot 3.x ceiling |
+| **Tomcat 11** | `jakarta.*` | **EE 11 (Servlet 6.1)** | **On the target baseline** — Boot 4.x reachable |
+| WildFly 26 and earlier, JBoss EAP 7.x | `javax.*` | EE 8 | Namespace migration, then the EE 11 step |
+| WildFly 27+, JBoss EAP 8 | `jakarta.*` | **EE 10** | Rename done, but **not** on the EE 11 baseline — still a version step to Boot 4 |
+| JBoss AS 5/6, EAP 5/6 | `javax.*`, older EE profile | pre-EE 8 | Furthest away; expect EJB 2.x and legacy security |
 
-**The consequence to state explicitly:** where the application is on `javax.*` and Java 8, the
-realistic route is Java 8 → 17 **then** Spring Boot 2.7 → 3.x, as two distinct stages each with its
-own validation. Where it is already on `jakarta.*` and Java 11+, that two-step is avoidable. This is
-one of the highest-value findings on any Java path — do not leave the reader to infer it.
+**Note the EE 10 trap.** WildFly 27+ and JBoss EAP 8 are frequently described as "already on
+Jakarta EE", and that was sufficient for Spring Boot 3. Spring Boot 4 raises the baseline to
+**Jakarta EE 11** — Servlet 6.1, JPA 3.2, Bean Validation 3.1 — so an EE 10 application is closer
+than a `javax.*` one but is **not** on the target baseline. Report the EE level, not just the
+namespace, so this does not get lost.
+
+**The consequence to state explicitly:** reaching Spring Boot 4.1 from a `javax.*` Java 8
+application is a **three-stage** sequence — Java 8 → 21/25, then Spring Boot 2.7 → 3.5 for the
+namespace rename and deprecation cleanup, then 3.5 → 4.1 for Jakarta EE 11, starter modularisation,
+Jackson 3 and Spring Security 7. Each stage carries its own validation cycle.
+
+**Stage 2 is mandatory even though Boot 3.5 is out of OSS support** (ended 30 June 2026). Boot 4
+removes every API deprecated anywhere in Boot 3.x with no grace period, and only Boot 3.x emits the
+deprecation warnings that tell you what to fix — so the cleanup has to happen on 3.5 with
+deprecation-as-error enabled. Boot 3.5 is a **transit version, not a destination**; do not let "3.x
+is EOL" be read as "skip it".
+
+Where the application is already on `jakarta.*` and Java 21+, the sequence collapses to stage 3
+alone. This is one of the highest-value findings on any Java path — do not leave the reader to
+infer it.
 
 ### Framework Stack and Its Migration Cost
 
@@ -96,7 +113,7 @@ Distinct from the above, and easier to miss because the application's own source
 off.
 
 - `sun.misc.Unsafe` — heavily used by older versions of Netty, Guava, Hibernate, Kryo, Jackson and many caching libraries
-- Reflective access into `java.*` internals — produces illegal-reflective-access warnings on Java 11 and hard failures on Java 17
+- Reflective access into `java.*` internals — produces illegal-reflective-access warnings on Java 11 and hard failures on Java 17 and later
 - Bytecode manipulation libraries (ASM, cglib, Javassist, ByteBuddy) at versions predating the target JDK's class file format
 - Any library with no release since Java 8's era
 
@@ -108,7 +125,7 @@ section 5 alongside the licence analysis.
 ## Target Architecture
 
 All J2EE migrations target:
-- Spring Boot 3.x with Java 17+
+- Spring Boot 4.1.x with Java 21 or 25 (Java 17 is the floor, not the recommendation)
 - Fully reactive architecture (WebFlux, R2DBC, Reactor)
 - AWS container-based deployments (ECS/EKS)
 - Graviton processor optimization
@@ -173,7 +190,7 @@ All J2EE migrations target:
 
 ### Phase 1: Project Structure Migration
 
-1. Update to Spring Boot 3.x parent
+1. Update to the Spring Boot 4.1.x parent
 2. Remove ALL J2EE and application server dependencies
 3. Add Spring Boot reactive starters:
    - `spring-boot-starter-webflux` (NOT `spring-boot-starter-web`)
@@ -230,7 +247,7 @@ All J2EE migrations target:
 
 All J2EE migrations must handle the namespace change:
 - `javax.*` packages → `jakarta.*` packages
-- Spring Boot 3.x uses Jakarta EE 9+
+- Spring Boot 3.x uses Jakarta EE 9+; **Spring Boot 4.1 requires Jakarta EE 11** (Servlet 6.1, JPA 3.2, Bean Validation 3.1)
 - Requires dependency updates across the board
 
 ## Common Code Migration Examples

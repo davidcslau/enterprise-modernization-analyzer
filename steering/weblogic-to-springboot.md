@@ -6,7 +6,7 @@ inclusion: manual
 
 ## Objective
 
-Migrate Oracle WebLogic Server-based J2EE applications to Spring Boot 3.x with Java 17 using a fully reactive architecture, targeting AWS container-based deployments optimized for Graviton processors.
+Migrate Oracle WebLogic Server-based J2EE applications to Spring Boot 4.1.x with Java 21 or 25, targeting AWS container-based deployments optimized for Graviton processors.
 
 ## Platform Detection
 
@@ -165,7 +165,7 @@ where it is used, why no direct successor exists, and the replacement or isolati
 
 - `javax.*` packages → `jakarta.*` packages
 - Requires dependency updates across the board
-- Spring Boot 3.x uses Jakarta EE 9+
+- Spring Boot 3.x uses Jakarta EE 9+; **Spring Boot 4.1 requires Jakarta EE 11** (Servlet 6.1, JPA 3.2, Bean Validation 3.1)
 
 ## Implementation Phases
 
@@ -180,7 +180,7 @@ where it is used, why no direct successor exists, and the replacement or isolati
 
 ### Phase 1: Project Structure Migration
 
-1. Update to Spring Boot 3.x parent
+1. Update to the Spring Boot 4.1.x parent
 2. Remove ALL J2EE and WebLogic dependencies
 3. Remove `weblogic-client.jar`, `wlthint3client.jar`
 4. Add Spring Boot reactive starters
