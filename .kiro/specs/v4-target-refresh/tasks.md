@@ -86,7 +86,7 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 - [x] **6.4** README version history entry for v4.0.0.
 - [x] **6.5** Update `MIGRATION-NOTES.md` for the atx monolith. _(R5.3)_
 - [x] **6.6** Sync `deploy/`, redeploy the installed power, verify byte-identical.
-- [ ] **6.7** Commit, tag `v4.0.0`, push both remotes, create releases on both.
+- [x] **6.7** Commit, tag `v4.0.0`, push both remotes, create releases on both.
 
 ---
 
