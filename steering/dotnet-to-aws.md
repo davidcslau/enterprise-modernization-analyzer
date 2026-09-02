@@ -2,11 +2,11 @@
 inclusion: manual
 ---
 
-# .NET Framework to .NET 8 / .NET 10 + AWS Modernization
+# .NET Framework to .NET 10 + AWS Modernization
 
 ## Analyzer Mission: Risk Surfacing for the .NET Runtime Migration
 
-This steering file is loaded when the user has committed to migrating .NET Framework to modern .NET — **.NET 8 or .NET 10** — on AWS. The analyzer's job is to surface every item in the codebase that needs attention before migration begins.
+This steering file is loaded when the user has committed to migrating .NET Framework to **.NET 10** on AWS. The analyzer's job is to surface every item in the codebase that needs attention before migration begins.
 
 **Focus on these outputs:**
 
@@ -18,52 +18,92 @@ This steering file is loaded when the user has committed to migrating .NET Frame
 
 Every finding in the report should answer: "What does the team need to know or do BEFORE they start the port, so the migration doesn't get stuck?"
 
-## Target Runtime: .NET 8 or .NET 10
+## Target Runtime: .NET 10
 
-The user selects the target runtime in POWER.md Step 1B. Record which one, and reflect it
-consistently throughout the report — it changes the upgrade path, the tooling support position,
-and the support-window discussion.
+**The target is .NET 10.** There is no runtime choice to present, and the report should not imply
+one exists.
 
-**Cover the choice directly rather than defaulting to .NET 8.** Both are LTS releases, and the
-distinction that matters to a modernization programme is the support window relative to the
-programme's own duration:
+| Runtime | Position |
+|---------|----------|
+| **.NET 10 (LTS)** | The target. Released November 2025, supported for approximately three years to **November 2028** |
+| **.NET 8 (LTS)** | **Not a target.** End of support **10 November 2026** |
+| **.NET 9 (STS)** | Not a target. End of support **10 November 2026** |
+| **.NET 12 (LTS)** | The next LTS, expected approximately **November 2027** |
 
-| Consideration | .NET 8 (LTS) | .NET 10 (LTS) |
-|---------------|--------------|---------------|
-| Support window vs a long programme | Ends **before** a multi-year programme would complete, so a team landing on .NET 8 late in the programme inherits a second upgrade almost immediately | Longer runway; a multi-year effort can land and stay |
-| Transformation tooling maturity | The most travelled path, with the broadest AWS Transform and third-party library coverage | Newer; verify per-dependency support rather than assuming it |
-| Third-party dependency availability | Widest availability of compatible package versions | Most packages that target .NET 8 run on .NET 10, but confirm rather than assume for commercial and native-interop packages |
-| Intermediate-hop cost | Landing on .NET 8 and later moving to .NET 10 is a small step compared with the Framework → modern .NET jump, but it is still a second validation and regression cycle | Avoids the second cycle |
+**Why .NET 8 is excluded rather than offered as an option.** A programme that lands on .NET 8
+inherits a second upgrade almost immediately, and for anything but the shortest effort the runtime
+is out of support before cutover completes. Presenting it alongside .NET 10 as a two-column
+comparison would imply two viable answers when there is one.
 
-**Report guidance.** State the selected target, then surface the support-window consequence as a
-finding rather than a recommendation: if the programme's own expected duration extends beyond
-.NET 8's support window, that is evidence the customer and their modernization specialists need in
-front of them. Do not choose between .NET 8 and .NET 10 on the customer's behalf, and do not
-present one as the "correct" answer.
+### Where .NET 8 still appears in the analysis
 
-## Upgrade Path Modelling: the 3.x Pre-Step
+It remains relevant in three specific ways, none of them as a target:
 
-.NET Framework 3.0 and 3.5 cannot be transformed directly to modern .NET by the mainstream
-tooling. They need a **3 → 4 pre-upgrade step** (AWS Transform Custom) before the 4 → 8/10
-transformation can run. Detect the exact Framework version per project and model the path
-explicitly. A solution with mixed project versions may need more than one path in parallel.
+1. **As a detected current state.** Projects already on .NET 8 or .NET 9 are **partially
+   modernized** and still need work: report them in the findings matrix as requiring their own
+   upgrade to .NET 10 before 10 November 2026. That is a version bump rather than a modernization
+   path — it shares none of the Windows lock-in, Web Forms or WCF analysis — so it belongs in the
+   findings, not as a separate pathway.
+2. **As a tooling trap.** AWS Transform for .NET offers **both** .NET 8 and .NET 10 as target
+   versions. Instruct the team explicitly to select **.NET 10**. Choosing .NET 8 in the tool is an
+   easy, silent way to land on an expiring runtime.
+3. **As a dependency constraint.** A commercial library whose newest build targets .NET 8 will
+   usually run on .NET 10, but confirm rather than assume — particularly for native-interop and
+   licence-bound packages. Where a dependency genuinely caps at .NET 8, that is a finding for
+   section 5, not a reason to change the target.
 
-| Detected Framework version | Path to model | Notes |
-|---------------------------|---------------|-------|
-| 4.6.1 – 4.8 | `4 → 8` or `4 → 10` | The most direct path. 4.6.1+ ports far more readily than earlier 4.x because of the wider .NET Standard 2.0 surface |
-| 4.0 – 4.5 | `4 → 8` or `4 → 10` | Direct, but expect more API gaps than 4.6.1+ and more manual remediation |
-| 3.0 / 3.5 | `3 → 4 → 8` or `3 → 4 → 10` | The 3 → 4 hop runs first via AWS Transform Custom. Model it as a distinct stage with its own validation |
+### Support window versus programme duration
 
-**Each hop adds transformation-defect surface.** Every transformation stage introduces its own
-crop of AI-generated and tool-generated defects that must be caught and corrected, so a
-`3 → 4 → 10` path carries two defect-capture cycles rather than one. Surface this as a finding
-for any 3.x project detected — it is a material planning input, not a footnote. Report it as
-additional validation and remediation surface, never as an hour or day figure.
+State this wherever the target is named. .NET 10's support runs to approximately November 2028
+and the next LTS arrives approximately November 2027. A programme finishing in 2028 or later
+should plan its own follow-on upgrade to .NET 12 as part of the roadmap rather than discovering it
+afterwards. Report it as a planning input, never as a reason to hesitate.
 
-**Report guidance.** Name the paths using this notation (`3→10`, `4→10`, `3→4→10`) so the reader
-can see at a glance which projects take the longer route, and state the count of projects on each
-path. Where a 3.x project exists, state plainly that the pre-step is a prerequisite rather than an
-optimisation.
+## Upgrade Path Modelling
+
+Detect the exact Framework version per project and model the path explicitly. A solution with
+mixed project versions may need more than one path in parallel.
+
+| Detected version | Path to model | Notes |
+|------------------|---------------|-------|
+| 4.6.1 – 4.8 | `4 → 10` | The most direct path. 4.6.1+ ports far more readily than earlier 4.x because of the wider .NET Standard 2.0 surface |
+| 4.0 – 4.5 | `4 → 10` | Direct, but expect more API gaps than 4.6.1+ and more manual remediation |
+| 3.5 | `3.5 → 10` — **verify** | AWS Transform documents .NET Framework **3.5+** as a supported source, so a direct transformation may be available. See the pre-step note below before assuming a hop is required |
+| 3.0 and earlier | `3 → 4 → 10` | Below AWS Transform's documented source floor. A 3 → 4 pre-upgrade step is needed first |
+| Already on .NET 8 / 9 | `8 → 10` or `9 → 10` | A version bump, not a modernization path. Report in the findings matrix with the 10 November 2026 deadline attached |
+
+**There is no `4 → 8 → 10` two-step.** AWS Transform targets .NET 10 directly from .NET Framework,
+so introducing .NET 8 as an intermediate stage adds a validation and regression cycle for no
+benefit. Do not model one.
+
+### The 3.x pre-step: verify, do not assume
+
+Two sources disagree here, and the honest treatment is to say so rather than pick one:
+
+- **AWS Transform documentation** lists supported sources as .NET Framework **3.5+**, .NET Core 3.1,
+  .NET 5.x+ and .NET 8 — which implies 3.5 can be transformed directly, with no 3 → 4 hop.
+- **Customer qualification material** commonly assumes .NET Framework 3.x requires a 3 → 4
+  pre-upgrade step (AWS Transform Custom) before the main transformation.
+
+Both can be true: the assumption may reflect an earlier tool version, or a 3.0 codebase that
+genuinely sits below the floor. So:
+
+- For **3.5**, state that a direct path is documented and instruct the team to **confirm against
+  the tool version they will actually use** before planning a pre-step. Do not assert the hop is
+  required.
+- For **3.0 and earlier**, the pre-step is required — that is below the documented floor.
+- Either way, report the exact per-project version, because the answer differs at the 3.0/3.5
+  boundary.
+
+**Each hop adds transformation-defect surface.** Every transformation stage produces its own crop
+of tool-generated and AI-generated defects that must be caught and corrected, so a `3 → 4 → 10`
+path carries two defect-capture cycles rather than one. Surface this as a finding wherever a
+pre-step applies — it is a material planning input, not a footnote. Report it as additional
+validation and remediation surface, never as an hour or day figure.
+
+**Report guidance.** Name the paths using this notation (`4→10`, `3.5→10`, `3→4→10`, `8→10`) so the
+reader can see at a glance which projects take the longer route, and state the count of projects on
+each path.
 
 ## Containerization Hops: Windows Containers as an Interim Step
 
@@ -127,7 +167,7 @@ Extract from `.csproj` / `.vbproj`:
 - `<TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>` through `v4.8.1` — late 4.x, ports most readily
 - `<TargetFramework>net48</TargetFramework>` — .NET Framework 4.8 (SDK-style project)
 - `<TargetFramework>net6.0</TargetFramework>` — .NET 6
-- `<TargetFramework>net8.0</TargetFramework>` — .NET 8
+- `<TargetFramework>net8.0</TargetFramework>` — .NET 8 (**already partially modernized**, but out of support 10 Nov 2026 — report as needing its own upgrade)
 - `<TargetFramework>net10.0</TargetFramework>` — .NET 10
 - `<TargetFrameworks>` (plural) — multi-targeting; list every framework moniker
 
@@ -165,7 +205,7 @@ flowchart TD
     StayFramework4[Stay on .NET Framework<br/>(OS Constraint)]
 
     %% Phase 2: Platform Selection
-    MoveModern([Move to Modern .NET<br/>.NET 8 or .NET 10 per Step 1B])
+    MoveModern([Move to .NET 10<br/>LTS, supported to ~Nov 2028])
 
     CheckWinFeat{Needs Windows-Only Features?<br/>(WPF/WinForms, GDI+, Registry,<br/>Win-Specific P/Invoke)}
     TargetWinX86[Target: Windows x86/x64<br/>(No Graviton)]
@@ -399,7 +439,7 @@ When these un-modernizable components are identified, recommend a hybrid approac
 
 ### Pattern: Modernize + Legacy Sidecar
 
-1. Modernize everything possible to the target architecture (.NET 8 / Linux / containers)
+1. Modernize everything possible to the target architecture (.NET 10 / Linux / containers)
 2. Isolate the un-modernizable components into a dedicated EC2 instance running the original platform (e.g., Windows Server with .NET Framework / IIS)
 3. Build API wrappers (REST or gRPC) around the legacy components on the EC2 instance
 4. Have the modernized application interface with the legacy sidecar through these wrappers
@@ -407,7 +447,7 @@ When these un-modernizable components are identified, recommend a hybrid approac
 ```mermaid
 flowchart LR
     subgraph Modern["Modernized Stack (ECS/EKS)"]
-        App[".NET 8 App<br/>(Linux Container)"]
+        App[".NET 10 App<br/>(Linux Container)"]
     end
     subgraph Legacy["Legacy Sidecar (EC2)"]
         Wrapper["API Wrapper<br/>(REST/gRPC)"]
@@ -419,7 +459,7 @@ flowchart LR
 
 ### When to Recommend This Pattern
 
-- A critical library has no .NET 8 or Linux-compatible version
+- A critical library has no .NET 10 or Linux-compatible version
 - A component depends on Windows-specific system APIs (GDI+, COM, Registry) that cannot be abstracted
 - Rewriting the component is not feasible within the migration timeline
 - The component is stable and rarely changes (low maintenance burden)
@@ -477,10 +517,16 @@ Detect the language of every project and report the split:
 - `.fsproj` → F#
 - Mixed solutions are common, especially where an older VB.NET module survives inside a C# solution
 
-**VB.NET adds material friction** to both AI-assisted transformation and AWS Transform for .NET.
-Training data, tooling coverage and community migration examples are all thinner than for C#, and
-VB-specific constructs (`On Error Resume Next`, late binding, default properties, `My.*` namespace,
-implicit conversions) have no clean C# or modern-.NET equivalent. Where VB.NET is found:
+**VB.NET adds material friction, and this is documented rather than inferred.** AWS Transform for
+.NET lists **C# only** among its fully supported project types; **VB.NET is a preview feature** that
+may not transform as completely as supported types. The same applies to WinForms, WPF and Xamarin
+projects. On top of that tooling position, training data and community migration examples are
+thinner than for C#, and VB-specific constructs (`On Error Resume Next`, late binding, default
+properties, `My.*` namespace, implicit conversions) have no clean C# or modern-.NET equivalent.
+
+Note that a documented VB.NET → .NET 10 path does exist, so do **not** report VB.NET as
+unsupported or as having no tooling route. Report it accurately: a preview capability with lower
+completeness, which means more review and correction per module. Where VB.NET is found:
 
 - Name the specific projects and the approximate share of the codebase they represent
 - Flag it as a distinct finding in section 4, not as a language footnote in section 3
@@ -631,7 +677,7 @@ Prioritize AWS Transform tools in this order:
 | Tool | Purpose | Priority |
 |------|---------|----------|
 | AWS Transform for Windows Full Stack | End-to-end .NET modernization including framework upgrade + database migration | 1st - Use when both app and DB migration needed |
-| AWS Transform for .NET | .NET Framework to .NET Core/8 porting, EF6 → EF Core migration | 2nd - Use for application-only migration |
+| AWS Transform for .NET | .NET Framework to .NET 10 porting, EF6 → EF Core migration | 2nd - Use for application-only migration |
 | AWS Schema Conversion Tool (SCT) | Database schema conversion analysis (SQL Server → PostgreSQL) | 3rd - Use for database-only scenarios |
 | AWS Database Migration Service (DMS) | Data migration with minimal downtime | 3rd - Use with SCT for database migration |
 | AWS App2Container | Containerization of existing .NET applications | 4th - Use for lift-and-shift containerization |
@@ -642,6 +688,45 @@ Prioritize AWS Transform tools in this order:
 - For full modernization (.NET upgrade **and** a confirmed SQL Server → Aurora PostgreSQL migration): use **AWS Transform for Windows Full Stack**
 - For database migration only (keeping .NET Framework): use **SCT + DMS**
 - For containerization without code changes: use **AWS App2Container**
+
+### AWS Transform for .NET — What It Does and Does Not Cover
+
+Establish this against the codebase inventory **before** planning, because it determines how much
+of the work is tool-assisted and how much is hand-written. Verify against current documentation:
+this position changes over time.
+
+**⛔ Select .NET 10 as the target.** The tool offers both .NET 8 and .NET 10. Selecting .NET 8
+lands the programme on a runtime that is out of support from 10 November 2026, and it is an easy
+thing to click past without noticing.
+
+| Supported sources | Supported targets |
+|-------------------|-------------------|
+| .NET Framework **3.5+**, .NET Core 3.1, .NET 5.x+, .NET 8 | **.NET 8 or .NET 10** — choose .NET 10 |
+
+| Fully supported project types (**C# only**) | Preview — may not transform completely | Not transformed |
+|---|---|---|
+| Class libraries; console applications; ASP.NET MVC including front-end Razor views; SPA back-ends (business-logic layers); Web API; **Web Forms**; unit test projects (NUnit, xUnit, MSTest); **WCF services**; projects whose third-party or private NuGet packages have cross-platform versions | **VB.NET** projects; WinForms desktop; WPF desktop; Xamarin mobile | **Blazor UI components**; Win32 DLLs with no core-compatible library; repositories containing no solutions |
+
+**Read the middle and right columns against the application type inventory.** Two consequences the
+report should draw out:
+
+- **Web Forms and WCF are fully supported project types**, which is worth stating plainly — they are
+  still the hardest things to *design* a target for, but they are not outside the tool's scope. Do
+  not conflate "hard to port" with "no tooling path".
+- **VB.NET, WinForms, WPF and Xamarin are preview.** Where the inventory is materially VB.NET or
+  desktop, expect lower completeness and more manual correction per module, and say so.
+- **Blazor UI components are explicitly not transformed.** If Blazor is present, that portion is a
+  hand-written rewrite regardless of how the rest of the solution fares.
+- Where a cross-platform equivalent for a package is missing, the tool attempts a best-effort
+  conversion — which is a review obligation, not a solved problem.
+
+**Operational facts worth stating in the report:** the tool does not modify original repository
+branches and writes only to a separate target branch; and human input is required at four points —
+connecting source control and permissions, validating the proposed modernization plan, supplying
+missing package dependencies as NuGets, and reviewing and accepting the transformed code.
+
+**Porting Assistant for .NET is closed to new customers** (from 7 November 2025). Do not recommend
+it for a new engagement; AWS Transform is the current path.
 - For a **3.0 / 3.5** codebase: **AWS Transform Custom** runs the 3 → 4 pre-upgrade step first, before any of the above
 
 Select tooling to match the confirmed scope. Do not recommend Windows Full Stack on the basis of a

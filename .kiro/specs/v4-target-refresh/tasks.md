@@ -23,14 +23,14 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 `steering/dotnet-to-aws.md`:
 
-- [ ] **2.1** **Delete** the .NET 8 vs .NET 10 trade-off table; replace with a single-target section. _(R1.4, design §2)_
-- [ ] **2.2** State .NET 10's support window (~Nov 2028) and the next LTS (.NET 12, ~Nov 2027) for programme-tail reasoning. _(R1.1)_
-- [ ] **2.3** Add the AWS Transform supported source/target matrix, including the explicit **"do not select .NET 8 in the tool"** instruction with the 10 Nov 2026 reason. _(R1.5)_
-- [ ] **2.4** Soften the 3.x → 4.x pre-step to verify-don't-assume, citing AWS Transform's 3.5+ source support and noting 3.0 is below the floor. Keep both positions visible. _(R1.6, design §2)_
-- [ ] **2.5** Re-ground VB.NET friction on the documented **preview** status; add WinForms/WPF/Xamarin as preview; add Blazor UI components as not transformed. _(R1.7)_
-- [ ] **2.6** Rework the upgrade-path model: direct `4.x → 10`, and `3.x → 10` subject to 2.4. No `4.x → 8 → 10` two-step. _(R1.3)_
-- [ ] **2.7** Detected .NET 8/9 as a findings-matrix item requiring its own upgrade before Nov 2026 — not a new source family. _(R1.2)_
-- [ ] **2.8** Mirror the relevant parts into `steering/dotnet-to-springboot.md` (Java target, so no .NET 10 runtime content, but the AWS Transform and VB.NET facts still apply).
+- [x] **2.1** **Delete** the .NET 8 vs .NET 10 trade-off table; replace with a single-target section. _(R1.4, design §2)_
+- [x] **2.2** State .NET 10's support window (~Nov 2028) and the next LTS (.NET 12, ~Nov 2027) for programme-tail reasoning. _(R1.1)_
+- [x] **2.3** Add the AWS Transform supported source/target matrix, including the explicit **"do not select .NET 8 in the tool"** instruction with the 10 Nov 2026 reason. _(R1.5)_
+- [x] **2.4** Soften the 3.x → 4.x pre-step to verify-don't-assume, citing AWS Transform's 3.5+ source support and noting 3.0 is below the floor. Keep both positions visible. _(R1.6, design §2)_
+- [x] **2.5** Re-ground VB.NET friction on the documented **preview** status; add WinForms/WPF/Xamarin as preview; add Blazor UI components as not transformed. _(R1.7)_
+- [x] **2.6** Rework the upgrade-path model: direct `4.x → 10`, and `3.x → 10` subject to 2.4. No `4.x → 8 → 10` two-step. _(R1.3)_
+- [x] **2.7** Detected .NET 8/9 as a findings-matrix item requiring its own upgrade before Nov 2026 — not a new source family. _(R1.2)_
+- [x] **2.8** Mirror the relevant parts into `steering/dotnet-to-springboot.md` (Java target, so no .NET 10 runtime content, but the AWS Transform and VB.NET facts still apply).
 
 **Commit.**
 

@@ -8,9 +8,9 @@ inclusion: manual
 
 Migrate .NET Framework applications (ASP.NET MVC, Web Forms, Web API, WCF) to Spring Boot 3.x with Java 17 using a fully reactive architecture, completely eliminating all .NET Framework and Windows-specific dependencies, targeting AWS container-based deployments optimized for Linux and Graviton processors.
 
-**IMPORTANT — Cross-Platform Migration:** This is a cross-language, cross-ecosystem migration (C# → Java). It is fundamentally more complex than same-ecosystem migrations (.NET Framework → .NET 8, or WebSphere → Spring Boot). The report MUST prominently acknowledge this complexity and surface the risks and effort items that flow from it.
+**IMPORTANT — Cross-Platform Migration:** This is a cross-language, cross-ecosystem migration (C# → Java). It is fundamentally more complex than same-ecosystem migrations (.NET Framework → .NET 10, or WebSphere → Spring Boot). The report MUST prominently acknowledge this complexity and surface the risks and effort items that flow from it.
 
-**⛔ DO NOT RECOMMEND A .NET 8 BRIDGE PATHWAY.** When the user has chosen Java as the target, they are committed to Java. Do NOT propose, suggest, or include any pathway that first upgrades to .NET 8 and then migrates to Java as a second step. This includes — but is not limited to — phrasings such as "modernize to .NET 8 first, then migrate to Java", ".NET 8 stepping stone", ".NET 8 intermediate target", or "phased cross-language approach via .NET 8". Such a two-step path roughly doubles the effort, doubles the business-continuity risk, and no team choosing Java would adopt it. The three pathways in the report must all terminate in Java Spring Boot Reactive (varying only by scope, timeline, and whether a hybrid EC2 sidecar is needed for un-modernizable Windows components) — NEVER in .NET 8 as an interim state.
+**⛔ DO NOT RECOMMEND A .NET BRIDGE PATHWAY.** When the user has chosen Java as the target, they are committed to Java. Do NOT propose, suggest, or include any pathway that first upgrades to modern .NET and then migrates to Java as a second step. This includes — but is not limited to — phrasings such as "modernize to .NET 10 first, then migrate to Java", ".NET 10 stepping stone", "modern .NET intermediate target", or "phased cross-language approach via .NET". Such a two-step path roughly doubles the effort, doubles the business-continuity risk, and no team choosing Java would adopt it. The three pathways in the report must all terminate in Java Spring Boot Reactive (varying only by scope, timeline, and whether a hybrid EC2 sidecar is needed for un-modernizable Windows components) — NEVER in .NET 10 or any other .NET runtime as an interim state.
 
 ## Platform Detection
 
@@ -97,8 +97,11 @@ Report per-type counts as **inventory only** — never as an effort figure.
 Detect the language of every project (`.csproj` → C#, `.vbproj` → VB.NET, `.fsproj` → F#) and report
 the split with named projects.
 
-**VB.NET adds material friction on this path in particular.** C# → Java is a well-travelled
-translation with abundant tooling and reference material; VB.NET → Java is not. VB-specific
+**VB.NET adds material friction on this path in particular, and there is no vendor tooling for it
+at all.** AWS Transform for .NET treats VB.NET as a preview capability, but its targets are .NET 8
+and .NET 10 — not Java — so it does not serve this path in any case (see the tooling note below).
+C# → Java is a well-travelled translation with abundant reference material; VB.NET → Java is not.
+VB-specific
 constructs — `On Error Resume Next`, late binding, default properties, the `My.*` namespace,
 implicit conversions, 1-based array conventions in older code — have no clean Java equivalent and
 each needs an explicit decision. Where VB.NET is found:
@@ -107,6 +110,31 @@ each needs an explicit decision. Where VB.NET is found:
 - Flag it as a distinct finding in section 4, not as a footnote
 - Note that AI-assisted translation quality is lower for VB.NET than for C#, so expect more review
   and correction cycles per module
+
+### Tooling Reality on This Path
+
+State this early, because teams reach for the wrong tool by default.
+
+**AWS Transform for .NET does not serve this path.** Its documented targets are .NET 8 and .NET 10 —
+both .NET runtimes. It ports .NET Framework to modern .NET; it does not translate C# to Java. Do not
+list it as the automation path for a Java target, and do not imply that a .NET-to-.NET tool's
+coverage table (Web Forms supported, VB.NET preview, and so on) transfers here.
+
+What that leaves:
+
+- **AI-assisted translation** (Kiro and comparable assistants) carries the bulk of the mechanical
+  work — C# → Java, LINQ → Streams, NuGet → Maven — with human review per module. This is the
+  primary accelerator on this path.
+- **OpenRewrite** applies on the Java side after translation, for framework-version migrations, not
+  for the cross-language step itself.
+- **SCT / DMS** apply only if database migration is confirmed in scope.
+- There is **no equivalent of a single-click transformation job** for C# → Java. Report that plainly
+  rather than implying parity with the .NET → .NET route, because the difference in tool support is
+  one of the largest distinctions between the two .NET pathways.
+
+Where the same codebase is being considered for **both** targets, this asymmetry is decision-grade
+evidence: the .NET → .NET 10 route has a vendor-supported transformation job, and this route does
+not. Present it as evidence, not as advice to change target.
 
 ### Build Toolchain and Baseline Buildability
 
@@ -121,7 +149,7 @@ cross-language migration has.
 
 ## Analyzer Mission: Risk Surfacing for Spring Boot Migration
 
-This steering file is loaded when the user has already committed to migrating .NET Framework to Java Spring Boot Reactive. The analyzer's job is NOT to second-guess this choice or compare it with .NET 8. The job is to surface every item in the codebase that needs attention before the migration begins.
+This steering file is loaded when the user has already committed to migrating .NET Framework to Java Spring Boot Reactive. The analyzer's job is NOT to second-guess this choice or compare it with the .NET 10 route. The job is to surface every item in the codebase that needs attention before the migration begins.
 
 **Focus on these outputs:**
 
