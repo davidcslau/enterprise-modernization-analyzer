@@ -1,9 +1,9 @@
 ---
 name: "legacy-app-modernization-analyzer"
 displayName: "Legacy App Modernization Analyzer"
-description: "Analyzes legacy enterprise codebases (.NET, IBM WebSphere, Oracle WebLogic, Red Hat WildFly/JBoss EAP, plain Java on Tomcat/Jetty, COBOL/Mainframe) and generates comprehensive AWS modernization feasibility reports. Detects the source platform, confirms the target with you (.NET 8, .NET 10, or Java Spring Boot with a React or Vue SPA), and produces visual architecture diagrams, proprietary dependency analysis, front-end rewrite sizing, scope-aware database analysis including Oracle to PostgreSQL, and ranked migration pathways."
-keywords: [".NET", ".NET 8", ".NET 10", "WebSphere", "WebLogic", "WildFly", "JBoss", "JBoss EAP", "COBOL", "Mainframe", "Java", "Spring Boot", "Struts", "JSF", "Dropwizard", "Tomcat", "Jetty", "React", "Vue", "Vue.js", "SPA", "front-end", "Oracle", "PostgreSQL", "Aurora", "SQL Server", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta", "Graviton"]
-version: "3.1.0"
+description: "Analyzes legacy enterprise codebases (.NET, IBM WebSphere, Oracle WebLogic, Red Hat WildFly/JBoss EAP, plain Java on Tomcat/Jetty, COBOL/Mainframe) and generates comprehensive AWS modernization feasibility reports. Detects the source platform, confirms the target with you (.NET 10, or Java Spring Boot 4.1 on Java 21/25 with a single-page front end in React, Angular, Vue, Svelte or another named framework), and produces visual architecture diagrams, proprietary dependency analysis, front-end rewrite sizing, scope-aware database analysis including Oracle to PostgreSQL, and ranked migration pathways."
+keywords: [".NET", ".NET 10", "WebSphere", "WebLogic", "WildFly", "JBoss", "JBoss EAP", "COBOL", "Mainframe", "Java", "Java 21", "Java 25", "Spring Boot", "Spring Boot 4", "Spring Boot 4.1", "Spring Framework 7", "virtual threads", "Struts", "JSF", "Dropwizard", "Tomcat", "Jetty", "React", "Angular", "Vue", "Vue.js", "Svelte", "SPA", "front-end", "Oracle", "PostgreSQL", "Aurora", "SQL Server", "modernization", "migration", "legacy", "AWS", "containerization", "microservices", "J2EE", "Jakarta", "Jakarta EE 11", "Graviton"]
+version: "4.0.0"
 author: "David Lau <davelau@amazon.com>"
 ---
 

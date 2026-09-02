@@ -168,7 +168,7 @@ flowchart TD
     CheckNamespace{javax.* or jakarta.*?}
     JavaxOnly[javax.* Only<br/>Namespace Migration Required]
     Mixed[Mixed javax/jakarta<br/>Consolidate to jakarta]
-    JakartaOnly[jakarta.* Only<br/>Spring Boot 3 Ready]
+    JakartaOnly[jakarta.* Only<br/>Boot 4 Candidate]
 
     CheckRemovedModules{Uses Removed JDK Modules?<br/>(java.xml.bind, java.activation,<br/>java.corba, sun.*)}
     AddJakartaDeps[Add Jakarta Standalone Deps<br/>jakarta.xml.bind, jakarta.activation]
@@ -333,7 +333,7 @@ Java 8 era tuning rarely transfers. Recalibrate on Java 21/25:
 | Log4j 1.x | End-of-life since 2015, unpatched CVEs | Log4j 2.x (or SLF4J + Logback) |
 | Log4j 2.x (pre-2.17) | Log4Shell (CVE-2021-44228) | Log4j 2.17.1+ |
 | Apache Commons Collections 3.x | Deserialization CVEs | 4.x or replacement |
-| Jackson 2.9 / earlier | Multiple CVEs | Jackson 2.15+ (aligned with Spring Boot 3) |
+| Jackson 2.9 / earlier | Multiple CVEs | **Jackson 3** under Boot 4.1 (`tools.jackson`, unchecked exceptions) |
 | Hibernate 5.x | javax.persistence | Hibernate 7.4 (jakarta.persistence, JPA 3.2) — the version managed by Boot 4.1 |
 | Spring Framework 4.x / 5.x | javax.* namespace | Spring Framework 7.x (jakarta.*, Jakarta EE 11) |
 | Spring Security 5.x | javax.servlet | Spring Security 7.x — lambda DSL only, CSRF on APIs by default |
@@ -387,18 +387,18 @@ Tools that help:
 
 ### Framework Migration Matrix
 
-| Source | Target Spring Boot 3 Equivalent |
+| Source | Target Spring Boot 4.1 Equivalent |
 |--------|---------------------------------|
-| Servlet / JSP on Tomcat (plain) | Spring Boot 3 + Spring MVC + embedded Tomcat |
+| Servlet / JSP on Tomcat (plain) | Spring Boot 4.1 + Spring MVC + embedded Tomcat 11 |
 | Struts 2 Actions | `@Controller` / `@RestController` |
 | Struts 1 Actions | `@Controller` + full rewrite of action forms |
 | JSF / Jakarta Faces | Spring MVC + Thymeleaf, or SPA frontend (React/Angular/Vue) + REST |
-| Spring MVC (XML-config, pre-Boot) | Spring Boot 3 auto-configuration + `@SpringBootApplication` |
+| Spring MVC (XML-config, pre-Boot) | Spring Boot 4.1 auto-configuration + `@SpringBootApplication` |
 | Spring Boot 1.x | Spring Boot 4.1.x (staged: 1.x → 2.7 → 3.5 → 4.1) |
 | Spring Boot 2.x | Spring Boot 4.1.x (staged: 2.x → 3.5 → 4.1; namespace at the 3.5 stage) |
 | Dropwizard | Spring Boot 4.1 MVC or WebFlux |
 | JAX-RS / Jersey (standalone) | Spring MVC (preferred) or keep Jersey via `spring-boot-starter-jersey` as a transitional bridge |
-| Vaadin (classic) | Vaadin Flow on Spring Boot 3, or SPA frontend |
+| Vaadin (classic) | Vaadin Flow on Spring Boot 4.1, or SPA frontend |
 | Apache Wicket | Spring MVC + Thymeleaf |
 | Play Framework 2.x | Spring Boot 4.1 WebFlux (reactive by origin) |
 
@@ -458,7 +458,7 @@ Tools that help:
 
 | Source | Target |
 |--------|--------|
-| Maven 3.3 or older | Maven 3.9+ (required for Spring Boot 3) |
+| Maven 3.3 or older | Maven 3.9+ |
 | Gradle 6.x or older | Gradle 8.x+ |
 | WAR deployed to external Tomcat | Executable JAR with embedded Tomcat (Spring Boot default) |
 | EAR with WARs | Split into multiple Spring Boot services |
@@ -677,7 +677,7 @@ In some cases, components or libraries are tightly coupled to legacy APIs, Java 
 
 ### Pattern: Modernize + Legacy Sidecar
 
-1. Modernize everything possible to Spring Boot 3 / Linux containers
+1. Modernize everything possible to Spring Boot 4.1 / Linux containers
 2. Isolate the un-modernizable components into a dedicated EC2 instance running the original Java runtime (e.g., Java 8 + old Tomcat + proprietary library)
 3. Build API wrappers (REST or gRPC) around the legacy components on the EC2 instance
 4. Have the modernized Spring Boot application call the legacy sidecar through these wrappers
@@ -685,7 +685,7 @@ In some cases, components or libraries are tightly coupled to legacy APIs, Java 
 ```mermaid
 flowchart LR
     subgraph Modern["Modernized Stack (ECS/EKS)"]
-        App["Spring Boot 3 App<br/>(Linux Container, Corretto 17/21)"]
+        App["Spring Boot 4.1 App<br/>(Linux Container, Corretto 21/25)"]
     end
     subgraph Legacy["Legacy Sidecar (EC2)"]
         Wrapper["API Wrapper<br/>(REST/gRPC)"]
@@ -727,7 +727,7 @@ Include this pattern in the report with:
 
 1. Update build tool: Maven 3.9+ / Gradle 8+
 2. Update `maven.compiler.release` or Gradle `languageVersion` to 17
-3. Switch base image to Amazon Corretto 17
+3. Switch base image to Amazon Corretto 21 or 25
 4. Add standalone replacements for removed modules (`jakarta.xml.bind`, etc.)
 5. Remove or replace `sun.*` / JDK-internal usage
 6. Recalibrate GC flags (G1GC is default; ZGC for low-pause)
@@ -782,7 +782,7 @@ Branch-specific:
 
 ### Phase 8: Container Optimization
 
-1. Multi-stage Dockerfile with Amazon Corretto 17/21 base
+1. Multi-stage Dockerfile with Amazon Corretto 21 or 25 base
 2. Jib or `spring-boot-maven-plugin` for layered images
 3. Multi-arch image (x86_64 + ARM64) with Docker buildx
 4. Verify all libraries support linux-arm64 before targeting Graviton
@@ -1276,7 +1276,7 @@ Stand up the new Spring Boot application alongside the legacy system. Route traf
 ```mermaid
 flowchart LR
     Client[Client] --> Facade[Routing Facade<br/>ALB / API Gateway / nginx]
-    Facade -->|/orders/*<br/>migrated| Boot[Spring Boot 3<br/>New Service]
+    Facade -->|/orders/*<br/>migrated| Boot[Spring Boot 4.1<br/>New Service]
     Facade -->|/legacy/*<br/>remaining| Legacy[Legacy Java App<br/>on Tomcat]
     Boot --> SharedDB[(Shared Database<br/>transitional)]
     Legacy --> SharedDB
@@ -1362,7 +1362,7 @@ public class OrderServlet extends HttpServlet {
 }
 ```
 
-**After (Spring Boot 3 + Spring MVC):**
+**After (Spring Boot 4.1 + Spring MVC):**
 ```java
 @RestController
 @RequestMapping("/orders")
@@ -1403,7 +1403,7 @@ public class OrderAction extends ActionSupport {
 </action>
 ```
 
-**After (Spring Boot 3):**
+**After (Spring Boot 4.1):**
 ```java
 @Controller
 @RequestMapping("/order")
@@ -1422,7 +1422,7 @@ public class OrderController {
 }
 ```
 
-### Spring MVC (XML config) → Spring Boot 3
+### Spring MVC (XML config) → Spring Boot 4.1
 
 **Before (Spring 5 with XML config):**
 ```xml
@@ -1435,7 +1435,7 @@ public class OrderController {
 </bean>
 ```
 
-**After (Spring Boot 3):**
+**After (Spring Boot 4.1):**
 ```yaml
 # application.yml
 spring:
@@ -1473,7 +1473,7 @@ public class OrderResource {
 }
 ```
 
-**After (Spring Boot 3):**
+**After (Spring Boot 4.1):**
 ```java
 @RestController
 @RequestMapping("/orders")
@@ -1591,7 +1591,7 @@ logging:
 </web-app>
 ```
 
-**After (Spring Boot 3):**
+**After (Spring Boot 4.1):**
 ```yaml
 # application.yml
 app:
@@ -1648,22 +1648,22 @@ public class AppProperties {
 
 ## Proprietary Dependency Analysis — Java Ecosystem
 
-When running proprietary dependency analysis for a Java codebase, apply this Java 17-compatibility matrix:
+When running proprietary dependency analysis for a Java codebase, apply this Java 21/25 compatibility matrix. Java 17 is the Spring Framework 7 / Boot 4.1 floor, so a library that is merely "Java 17 clean" is necessary but not sufficient — confirm it also runs on the JDK the programme actually targets:
 
-| Library / Family | Pre-Migration Version | Java 17 / Spring Boot 3 Readiness | Recommended Action |
+| Library / Family | Pre-Migration Version | Java 21/25 + Spring Boot 4.1 Readiness | Recommended Action |
 |------------------|----------------------|-----------------------------------|--------------------|
 | Log4j 1.x | 1.2.x | Unsupported since 2015, unpatched CVEs | Replace with Log4j 2.x or Logback |
 | Apache Commons Collections | 3.x | Historical deserialization CVEs | Upgrade to 4.x |
-| Apache HttpClient | 4.5.x | Supported; Java 17 compatible | Optional upgrade to 5.x or migrate to `java.net.http.HttpClient` |
-| Jackson | 2.9 / 2.11 | Older CVEs present | Align with Spring Boot 3 BOM (2.15+) |
-| Hibernate ORM | 5.x | javax.persistence only | Upgrade to 6.x (jakarta.persistence) |
-| Spring Framework | 4.x / 5.x | javax namespace | Upgrade to 6.x via Spring Boot 3 |
-| Spring Security | 5.x | javax.servlet | Upgrade to 6.x (jakarta.servlet) |
+| Apache HttpClient | 4.5.x | Runs on Java 21/25 | Optional upgrade to 5.x or migrate to `java.net.http.HttpClient` |
+| Jackson | 2.9 / 2.11 | Older CVEs present | **Jackson 3** via the Boot 4.1 BOM; note the `tools.jackson` package move |
+| Hibernate ORM | 5.x | javax.persistence only | Upgrade to 7.4 (jakarta.persistence, JPA 3.2) — the version managed by Boot 4.1 |
+| Spring Framework | 4.x / 5.x | javax namespace | Upgrade to 7.x via Spring Boot 4.1 (staged through 3.5) |
+| Spring Security | 5.x | javax.servlet | Upgrade to 7.x — lambda DSL only, CSRF on API endpoints by default |
 | JUnit | 4.x | Requires `junit-vintage-engine` under JUnit 5 | Migrate to JUnit 5 Jupiter |
-| Mockito | 1.x / 2.x | Reflection issues on JDK 17+ | Upgrade to 5.x |
-| Lombok | ≤ 1.18.22 | Fails on JDK 17 | Upgrade to 1.18.30+ |
-| PowerMock | Any | Not maintained for JDK 17 | Replace with Mockito 5 / refactor static calls |
-| Quartz Scheduler | 2.3 | Works on JDK 17 | Keep or migrate to Spring Batch / EventBridge |
+| Mockito | 1.x / 2.x | Reflection issues on JDK 17+ | Upgrade to 5.x; note `@MockBean`/`@SpyBean` are removed in Boot 4 (`@MockitoBean`/`@MockitoSpyBean`) |
+| Lombok | ≤ 1.18.22 | Fails on JDK 17 and later | Upgrade to the current release and re-verify on the target JDK |
+| PowerMock | Any | Not maintained for JDK 17 or later | Replace with Mockito 5 / refactor static calls |
+| Quartz Scheduler | 2.3 | Runs on current JDKs | Keep or migrate to Spring Batch / EventBridge |
 | Apache Axis 1.x | 1.x | Long EOL | Replace with JAX-WS (jakarta.xml.ws) or REST |
 | Apache Axis 2 | 1.x | JDK 11+ caveats | Replace with JAX-WS/REST unless actively used |
 | JBoss Logging | Any | Compatible | Keep |
@@ -1673,9 +1673,9 @@ When running proprietary dependency analysis for a Java codebase, apply this Jav
 | Nashorn scripting | Bundled | Removed in JDK 15 | Replace with GraalJS or external |
 | IBM JDK-specific APIs | — | Not portable | Refactor to standard Java |
 | Oracle JRockit APIs | — | JRockit EOL | Refactor to standard Java |
-| JCE export restriction (Java 8 builds) | — | Removed in Java 9+ | No action needed on Java 17 |
-| Commercial APM agents (New Relic, AppDynamics, Dynatrace) | Older builds | Verify JDK 17 / linux-arm64 support | Upgrade agent version; confirm ARM64 binaries |
-| Oracle JDBC (ojdbc8/ojdbc11) | Any | Fine on Java 17 | Validate JDBC driver matches database version |
+| JCE export restriction (Java 8 builds) | — | Removed in Java 9+ | No action needed on Java 21/25 |
+| Commercial APM agents (New Relic, AppDynamics, Dynatrace) | Older builds | Verify support for the target JDK (21 or 25) and linux-arm64 | Upgrade agent version; confirm ARM64 binaries and virtual-thread safety |
+| Oracle JDBC (ojdbc8/ojdbc11) | Any | Use ojdbc11 or later on Java 21/25 | Validate JDBC driver matches database version |
 | BouncyCastle (bcprov-jdk15on) | Older | Compatible | Upgrade to `bcprov-jdk18on` |
 | ehcache 2.x | 2.x | javax.cache caveats | Upgrade to ehcache 3.x (jakarta) |
 | Hazelcast 3.x | 3.x | Older | Upgrade to 5.x (jakarta) |
@@ -1683,7 +1683,7 @@ When running proprietary dependency analysis for a Java codebase, apply this Jav
 
 For each material proprietary dependency found, the report should include:
 - Current version detected and its maintenance status
-- Java 17 / jakarta namespace compatibility
+- Target-JDK (21 or 25) and jakarta namespace compatibility
 - Breaking changes (if applicable)
 - Before/after code example where migration requires code change
 - Mitigation options table with effort level (Low / Medium / High)
@@ -1693,7 +1693,7 @@ For each material proprietary dependency found, the report should include:
 | Component | AWS Service |
 |-----------|-------------|
 | Container Orchestration | Amazon ECS (Fargate) / Amazon EKS |
-| JDK Runtime | Amazon Corretto 17 or 21 |
+| JDK Runtime | Amazon Corretto 21 or 25 |
 | Database (relational) | Amazon Aurora PostgreSQL (preferred) or Amazon RDS |
 | Database (relational, reactive) | Aurora PostgreSQL via R2DBC |
 | NoSQL | Amazon DynamoDB |
@@ -1777,7 +1777,7 @@ Prioritize in this order:
 
 A complete Java-to-Spring-Boot modernization should meet:
 
-1. Runs on Amazon Corretto 17 or 21
+1. Runs on Amazon Corretto 21 or 25
 2. Zero `javax.*` imports outside of jakarta-compatible transitive shims
 3. Zero references to removed JDK modules (`java.xml.bind`, `java.activation`, `java.corba`, etc.)
 4. Zero `sun.*` / JDK-internal API usage

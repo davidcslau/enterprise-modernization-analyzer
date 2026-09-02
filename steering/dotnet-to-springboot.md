@@ -745,7 +745,7 @@ flowchart LR
 
 ### Phase 10: Container and AWS Optimization
 
-1. Create multi-arch Dockerfile (Corretto 17, x86_64 + ARM64)
+1. Create multi-arch Dockerfile (Corretto 21 or 25, x86_64 + ARM64)
 2. Configure for Graviton processors
 3. Implement reactive health checks (Actuator WebFlux)
 4. Configure CloudWatch, X-Ray, Parameter Store

@@ -80,12 +80,12 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 ## Phase 6 — Verify, version, deploy
 
-- [ ] **6.1** Verification sweep: 13-of-13 dispatch reachability after renames; all `inclusion: manual`; 11 report sections; 43 checklist items; no dollar amounts, effort estimates or ASCII-art diagrams; **zero stale `.NET 8` or `Spring Boot 3` target claims**.
-- [ ] **6.2** Confirm source-side legacy facts were not corrupted by the version sweep (Tomcat 9 is still javax, etc.). _(design §7)_
-- [ ] **6.3** Bump `POWER.md` to **4.0.0**; update description and keywords (Angular, Svelte, Boot 4.1, Java 25, virtual threads). _(R5.1, R5.2)_
-- [ ] **6.4** README version history entry for v4.0.0.
-- [ ] **6.5** Update `MIGRATION-NOTES.md` for the atx monolith. _(R5.3)_
-- [ ] **6.6** Sync `deploy/`, redeploy the installed power, verify byte-identical.
+- [x] **6.1** Verification sweep: 13-of-13 dispatch reachability after renames; all `inclusion: manual`; 11 report sections; 43 checklist items; no dollar amounts, effort estimates or ASCII-art diagrams; **zero stale `.NET 8` or `Spring Boot 3` target claims**.
+- [x] **6.2** Confirm source-side legacy facts were not corrupted by the version sweep (Tomcat 9 is still javax, etc.). _(design §7)_
+- [x] **6.3** Bump `POWER.md` to **4.0.0**; update description and keywords (Angular, Svelte, Boot 4.1, Java 25, virtual threads). _(R5.1, R5.2)_
+- [x] **6.4** README version history entry for v4.0.0.
+- [x] **6.5** Update `MIGRATION-NOTES.md` for the atx monolith. _(R5.3)_
+- [x] **6.6** Sync `deploy/`, redeploy the installed power, verify byte-identical.
 - [ ] **6.7** Commit, tag `v4.0.0`, push both remotes, create releases on both.
 
 ---
