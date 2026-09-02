@@ -21,20 +21,29 @@ APIs differ enough to warrant separate treatment.
 
 | # | Source Platform | Target Platform | Steering File |
 |---|-----------------|-----------------|---------------|
-| 1 | .NET Framework | .NET 8 **or .NET 10** + AWS | `steering/dotnet-to-aws.md` |
-| 2 | .NET Framework | Java Spring Boot + **React or Vue.js** + AWS | `steering/dotnet-to-springboot.md` |
-| 3 | J2EE — IBM WebSphere | Spring Boot + React/Vue + AWS | `steering/websphere-to-springboot.md` |
-| 4 | J2EE — Oracle WebLogic | Spring Boot + React/Vue + AWS | `steering/weblogic-to-springboot.md` |
-| 5 | J2EE — Red Hat WildFly / JBoss EAP | Spring Boot + React/Vue + AWS | `steering/wildfly-to-springboot.md` |
-| 6 | Java SE 8 / plain Java (Tomcat, Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 3.x + Java 17/21 + React/Vue + AWS | `steering/java-to-springboot.md` |
-| 7 | COBOL / Mainframe | Java Spring Boot + React/Vue + AWS | `steering/cobol-to-java.md` |
+| 1 | .NET Framework | **.NET 10 (LTS)** + AWS | `steering/dotnet-to-aws.md` |
+| 2 | .NET Framework | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/dotnet-to-springboot.md` |
+| 3 | J2EE — IBM WebSphere | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/websphere-to-springboot.md` |
+| 4 | J2EE — Oracle WebLogic | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/weblogic-to-springboot.md` |
+| 5 | J2EE — Red Hat WildFly / JBoss EAP | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/wildfly-to-springboot.md` |
+| 6 | Java SE 8 / plain Java (Tomcat, Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/java-to-springboot.md` |
+| 7 | COBOL / Mainframe | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | `steering/cobol-to-java.md` |
+
+**Target versions and why these specifically** — state these in the report wherever a target
+is named, because a support window that closes mid-programme is a planning input, not trivia:
+
+| Target | Position |
+|--------|----------|
+| **.NET 10** | LTS, supported to approximately **November 2028**. The next LTS is .NET 12 (approximately November 2027). **.NET 8 is not offered as a target: its support ends 10 November 2026** |
+| **Spring Boot 4.1.x** | Supported to **31 July 2027**. Pinned to the *minor* deliberately — Boot 4.0's own support ends 31 December 2026, so landing on 4.0 means upgrading twice. Each Boot minor receives roughly **13 months** of OSS patches, so a programme completing in 2027 or later should plan to land on 4.2 or 4.3 rather than treat 4.1 as final |
+| **Java 21 or 25** | Both LTS, both available as Amazon Corretto. Spring Boot 4's floor is Java 17, but that floor is largely theoretical — some managed dependencies already require 21+. Java 25 is the current LTS and the default recommendation; 21 is the conservative choice |
 
 Two cross-cutting dimensions apply on top of a source → target combination, and are
 dispatched conditionally:
 
 | Dimension | Steering File | Applies when |
 |-----------|---------------|--------------|
-| Front-end / SPA rewrite | `steering/frontend-to-spa.md` | Target is Java Spring Boot **and** the user has named React or Vue as the front-end target |
+| Front-end / SPA rewrite | `steering/frontend-to-spa.md` | Target is Spring Boot **and** the user has named a front-end framework — React, Vue, Angular, Svelte or any other — or has said the choice is not yet decided. Not loaded for backend-only |
 | Oracle → PostgreSQL | `steering/oracle-to-postgresql.md` | Oracle is detected **and** the user confirms database migration is in scope |
 
 ## Workflow
@@ -108,35 +117,49 @@ them is not this analyzer's job.
 **If the user's opening message already stated a target, skip the relevant prompt** and
 proceed with what they said.
 
-**When the source is .NET**, ask which target runtime:
+**When the source is .NET**, ask which ecosystem:
 
 > I've detected a **.NET Framework codebase**. Which target are you modernizing to?
 >
-> 1. **.NET 8 (LTS) on AWS** — stay on C#, upgrade the framework
-> 2. **.NET 10 (LTS) on AWS** — stay on C#, upgrade the framework
-> 3. **Java Spring Boot + SPA on AWS** — migrate to Java
+> 1. **.NET 10 (LTS) on AWS** — stay on C#, upgrade the framework
+> 2. **Java Spring Boot + SPA on AWS** — migrate to Java
 >
-> Reply with "1" / ".NET 8", "2" / ".NET 10", or "3" / "Java".
+> Reply with "1" / ".NET" or "2" / "Java".
 
-- Reply 1 or 2 → target is **.NET 8 / .NET 10**. Record which one; it changes the upgrade path and the support-window discussion.
-- Reply 3 → target is **Java Spring Boot**. Then also ask the front-end question below.
+- Reply 1 → target is **.NET 10**. There is no .NET 8 option: **.NET 8 reaches end of support on 10 November 2026**, so it is not a viable destination for a programme starting now. .NET 10 is LTS, supported to approximately November 2028; the next LTS is .NET 12 (approximately November 2027).
+- Reply 2 → target is **Java Spring Boot**. Then also ask the front-end question below.
 - Ambiguous reply → ask one clarifying question before proceeding.
+- If the user asks for **.NET 8 specifically**, tell them the support date plainly and confirm before proceeding. Do not silently comply, and do not silently override them either.
 
 **When the target is Java Spring Boot** — that is, any WebSphere, WebLogic, WildFly, plain
-Java or COBOL source, and .NET with reply 3 — ask about the front-end:
+Java or COBOL source, and .NET with reply 2 — the back-end target is **Spring Boot 4.1.x on
+Java 21 or 25**. Then ask about the front end:
 
-> Target back end is **Java Spring Boot on AWS**. What is in scope for the front end?
+> Target back end is **Spring Boot 4.1.x on AWS**. What is in scope for the front end?
 >
 > 1. **React**
 > 2. **Vue.js**
-> 3. **Backend-only** — no front-end rewrite in scope
+> 3. **Angular**
+> 4. **Svelte**
+> 5. **Another framework** — name it
+> 6. **Not decided yet**
+> 7. **Backend-only** — no front-end rewrite in scope
 >
-> Reply with "1" / "React", "2" / "Vue", or "3" / "backend-only".
+> Reply with a number, or just name the framework.
 
-- The front-end framework is **user input, never an analyzer recommendation.** Detect what
-  the application uses today, size the rewrite, and accept the named target as given. Never
-  compare React and Vue, and never advocate either.
-- "Backend-only" is a first-class answer, not a fallback. Plenty of programmes modernize the
+- The front-end framework is **user input, never an analyzer recommendation.** Detect what the
+  application uses today, size the rewrite, and accept the named target as given. **Never
+  compare frameworks and never advocate any of them** — no feature tables, no ecosystem or
+  hiring-pool commentary, no "safer default" language. This applies to every framework, not
+  just React and Vue.
+- **Accept any named framework.** The analysis is framework-agnostic: the expensive work is all
+  on the source side — screen inventory, whether a REST API already exists, business logic in
+  the view layer, what does not port cleanly — and none of it changes with the target. Only a
+  small set of target-specific consequences varies, covered in `frontend-to-spa.md`.
+- **"Not decided yet" is a first-class answer.** Size the rewrite framework-agnostically and
+  name the framework choice as an open question for the customer. Do not choose for them, and
+  do not stall the analysis waiting for a decision it does not depend on.
+- **"Backend-only" is a first-class answer**, not a fallback. Plenty of programmes modernize the
   back end and leave the UI untouched. In that case `frontend-to-spa.md` is not loaded at all.
 
 **Once the target is confirmed**, the analyzer's job is to surface risks and manual-effort
@@ -163,15 +186,15 @@ named in the row that matches the detected source + target, it is not loaded.
 
 | Source | Target | Then load, in order |
 |--------|--------|---------------------|
-| .NET Framework | .NET 8 or .NET 10 | `dotnet-to-aws.md` |
+| .NET Framework | .NET 10 | `dotnet-to-aws.md` |
 | .NET Framework | Java Spring Boot + SPA | `dotnet-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
 | J2EE — IBM WebSphere | Spring Boot | `websphere-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
 | J2EE — Oracle WebLogic | Spring Boot | `weblogic-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
 | J2EE — WildFly / JBoss EAP | Spring Boot | `wildfly-to-springboot.md`, `j2ee-to-springboot-reactive.md`, `frontend-to-spa.md` ¹ |
-| Java SE / plain Java | Spring Boot 3.x + Java 17/21 | `java-to-springboot.md`, `frontend-to-spa.md` ¹ |
+| Java SE / plain Java | Spring Boot 4.1.x + Java 21/25 | `java-to-springboot.md`, `frontend-to-spa.md` ¹ |
 | COBOL / Mainframe | Java Spring Boot | `cobol-to-java.md`, `frontend-to-spa.md` ¹ |
 
-¹ Load `frontend-to-spa.md` only when the Step 1B front-end answer was React or Vue. Omit it
+¹ Load `frontend-to-spa.md` when the Step 1B front-end answer named any framework, or said the choice is undecided. Omit it
 for backend-only.
 
 **Order within a row matters.** The universal framework establishes the report contract and
@@ -292,7 +315,7 @@ This power includes the `fetch` MCP server (configured in `mcp.json`) to query p
 - Access to codebase (local or repository)
 - Familiarity with source platform (.NET, WebSphere, WebLogic, WildFly/JBoss EAP, plain Java, or COBOL/Mainframe)
 - Understanding of modernization goals (cloud-native, containerization, etc.)
-- A decision on the target platform — .NET 8, .NET 10, or Java Spring Boot — and, for a Java target, whether a React or Vue front-end rewrite is in scope
+- A decision on the target platform — .NET 10, or Spring Boot 4.1.x on Java 21/25 — and, for a Spring Boot target, which front-end framework is in scope, or that the work is backend-only
 - Awareness of proprietary/commercial library dependencies
 
 ## Trigger Phrases
@@ -305,8 +328,14 @@ This power activates when users mention:
 - "AWS migration"
 - "containerize app"
 - "modernize to Spring Boot"
-- "modernize to .NET 8"
 - "modernize to .NET 10"
+- "modernize to Spring Boot 4"
+- "Spring Boot 3 to 4"
+- "Java 8 to 21"
+- "Java 17 to 25"
+- "JSP to Angular"
+- "JSF to Angular"
+- "Struts to React"
 - ".NET modernization"
 - ".NET to Java"
 - ".NET to Spring Boot"
@@ -385,7 +414,7 @@ Generate report in `yymmddhhmm_MODERNIZATION_REPORT.md` following the structure 
 
 **Cause:** The user's initial prompt did not name a target.
 
-**Solution:** Use the mandatory target prompts in Step 1B. Do NOT assume a default. Do NOT proceed until the user confirms the target runtime, and — for a Java target — whether a React or Vue front-end rewrite is in scope or the work is backend-only.
+**Solution:** Use the mandatory target prompts in Step 1B. Do NOT assume a default. Do NOT proceed until the user confirms the target ecosystem, and — for a Spring Boot target — which front-end framework is in scope, that the choice is undecided, or that the work is backend-only.
 
 ### A steering file that should apply was never loaded
 

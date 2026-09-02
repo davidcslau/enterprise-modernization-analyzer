@@ -6,14 +6,14 @@ Requirement IDs refer to `requirements.md`; section refs to `design.md`.
 
 ## Phase 1 — Targets and prompts
 
-- [ ] **1.1** `POWER.md` Step 1B: .NET prompt collapses to a single target, **.NET 10 (LTS)**. Remove the .NET 8 option. _(R1.1)_
-- [ ] **1.2** `POWER.md` Step 1B: front-end prompt generalised to React / Vue / Angular / Svelte / other (name it) / **undecided** / backend-only. _(R4.1, R4.3)_
-- [ ] **1.3** `POWER.md` Step 1B: Java target stated as Spring Boot **4.1.x** + Java **21 or 25** (17 floor). _(R2.1, R2.3)_
-- [ ] **1.4** `POWER.md` Supported Modernization Paths table: targets updated across all 7 rows. _(R1.1, R2.1)_
-- [ ] **1.5** `POWER.md` cross-cutting dimensions table: front-end row reworded for any named framework. _(R4.1)_
-- [ ] **1.6** `POWER.md` trigger phrases: add Angular/Svelte/.NET 10/Boot 4 phrases; retire ".NET 8" phrasing. _(R1.1, R4.1)_
-- [ ] **1.7** `README.md` paths table, cross-cutting table, features list and detection section updated to match. _(R1.1, R2.1, R4.1)_
-- [ ] **1.8** State the ~13-month Boot minor cadence and .NET 10's support window wherever a target is named. _(R2.2)_
+- [x] **1.1** `POWER.md` Step 1B: .NET prompt collapses to a single target, **.NET 10 (LTS)**. Remove the .NET 8 option. _(R1.1)_
+- [x] **1.2** `POWER.md` Step 1B: front-end prompt generalised to React / Vue / Angular / Svelte / other (name it) / **undecided** / backend-only. _(R4.1, R4.3)_
+- [x] **1.3** `POWER.md` Step 1B: Java target stated as Spring Boot **4.1.x** + Java **21 or 25** (17 floor). _(R2.1, R2.3)_
+- [x] **1.4** `POWER.md` Supported Modernization Paths table: targets updated across all 7 rows. _(R1.1, R2.1)_
+- [x] **1.5** `POWER.md` cross-cutting dimensions table: front-end row reworded for any named framework. _(R4.1)_
+- [x] **1.6** `POWER.md` trigger phrases: add Angular/Svelte/.NET 10/Boot 4 phrases; retire ".NET 8" phrasing. _(R1.1, R4.1)_
+- [x] **1.7** `README.md` paths table, cross-cutting table, features list and detection section updated to match. _(R1.1, R2.1, R4.1)_
+- [x] **1.8** State the ~13-month Boot minor cadence and .NET 10's support window wherever a target is named. _(R2.2)_
 
 **Commit.** → **CHECKPOINT 1 — stop for review.** _(Q7)_
 

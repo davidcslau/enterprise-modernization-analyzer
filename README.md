@@ -8,13 +8,13 @@ Every analysis is defined by **two dimensions**: the **source platform** (detect
 
 | # | Source Platform | Target Platform | Description | Status |
 |---|-----------------|-----------------|-------------|--------|
-| 1 | .NET Framework | .NET 8 or **.NET 10** (LTS) + AWS | Windows-based .NET apps to cross-platform cloud-native, staying on C# | ✅ Stable |
-| 2 | .NET Framework | Java Spring Boot + SPA + AWS | .NET apps migrated off C# to the Java stack | 🧪 BETA |
-| 3 | IBM WebSphere | Spring Boot + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
-| 4 | Oracle WebLogic | Spring Boot + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
-| 5 | **Red Hat WildFly / JBoss EAP** | Spring Boot + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
-| 6 | Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 3.x + Java 17/21 + AWS | Plain Java SE / server-side Java (non-app-server) to Spring Boot 3 on Graviton | 🧪 BETA |
-| 7 | COBOL/Mainframe | Java Spring Boot + AWS | CICS online, batch, DB2, VSAM to containerized Java on Graviton | 🧪 BETA |
+| 1 | .NET Framework | **.NET 10** (LTS) + AWS | Windows-based .NET apps to cross-platform cloud-native, staying on C# | ✅ Stable |
+| 2 | .NET Framework | Spring Boot 4.1.x + Java 21/25 + SPA + AWS | .NET apps migrated off C# to the Java stack | 🧪 BETA |
+| 3 | IBM WebSphere | Spring Boot 4.1.x + Java 21/25 + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
+| 4 | Oracle WebLogic | Spring Boot 4.1.x + Java 21/25 + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
+| 5 | **Red Hat WildFly / JBoss EAP** | Spring Boot 4.1.x + Java 21/25 + AWS | J2EE/Jakarta EE to microservices | 🧪 BETA |
+| 6 | Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard, Servlet/JSP) | Spring Boot 4.1.x + Java 21/25 + AWS | Plain Java SE / server-side Java (non-app-server) to Spring Boot 4 on Graviton | 🧪 BETA |
+| 7 | COBOL/Mainframe | Spring Boot 4.1.x + Java 21/25 + AWS | CICS online, batch, DB2, VSAM to containerized Java on Graviton | 🧪 BETA |
 
 ### Cross-Cutting Dimensions
 
@@ -22,33 +22,33 @@ Two additional dimensions layer on top of a source → target path and are only 
 
 | Dimension | Applies when |
 |-----------|--------------|
-| **Front-end / SPA rewrite** (React or Vue.js) | Target back end is Java Spring Boot **and** you name React or Vue as the front-end target. "Backend-only" is a first-class choice that skips the front-end rewrite entirely. |
+| **Front-end / SPA rewrite** (any framework) | Target back end is Spring Boot **and** you name a front-end framework - React, Vue, Angular, Svelte or another - or say the choice is not yet decided. "Backend-only" is a first-class choice that skips the front-end rewrite entirely. |
 | **Oracle → PostgreSQL** | Oracle is detected **and** you confirm database migration is in scope. Database migration scope is never assumed in either direction. |
 
 > **Note**: WebSphere, WebLogic, WildFly/JBoss, Java, COBOL, and .NET → Java paths are in BETA. While functional, these paths may have limited coverage for some proprietary APIs and edge cases.
 
-> **On path 2 (.NET → Java)**: this is a cross-language, cross-ecosystem migration (C# → Java) and is materially more complex than a same-ecosystem upgrade. Once you have chosen Java, the analyzer surfaces the risks, manual-effort items and automation opportunities for the Java target — it does **not** propose a two-step ".NET 8 first, then Java" bridge pathway. All three ranked pathways terminate in Java.
+> **On path 2 (.NET → Java)**: this is a cross-language, cross-ecosystem migration (C# → Java) and is materially more complex than a same-ecosystem upgrade. Once you have chosen Java, the analyzer surfaces the risks, manual-effort items and automation opportunities for the Java target — it does **not** propose a two-step ".NET 10 first, then Java" bridge pathway. All three ranked pathways terminate in Java.
 
 ## Features
 
 - **Two-Dimension Analysis**: Every report is scoped by a detected **source platform** and a user-chosen **target platform**. The target is always confirmed with you, never inferred from the source or defaulted
 - **Auto-Detection**: Automatically identifies source platform from codebase indicators, using nested detection order so app-server apps (WebSphere/WebLogic/WildFly) are never mistaken for plain Java
-- **Target Selection Prompts**: For .NET, asks whether the target is .NET 8, .NET 10, or Java Spring Boot; for any Spring Boot target, asks whether the front end is React, Vue.js, or backend-only
+- **Target Selection Prompts**: For .NET, asks whether the target is .NET 10 or Spring Boot on Java; for any Spring Boot target, asks which front-end framework is in scope - React, Vue, Angular, Svelte, another, undecided, or backend-only
 - **Platform-Specific Analysis**: Dedicated migration strategies for each source platform, dispatched through a single authoritative steering-file table (no implicit or pattern-matched loading)
 - **Comprehensive Evaluation**: 18+ modernization areas assessed
 - **Visual Architecture Diagrams**: Mermaid.js diagrams with component-level color coding
 - **Package License Verification**: Queries NuGet/Maven APIs for license validation
 - **Proprietary Dependency Analysis**: Impact assessment with code migration examples
-- **.NET Pre-Migration Risk Surfacing (.NET 8 / .NET 10)**: When a .NET Framework → .NET 8 or .NET 10 migration is already committed, the analyzer surfaces every item the team needs to address before the port begins — automation-eligible items (AWS Transform for .NET / Windows Full Stack, EF6 → EF Core), manual-effort items (WCF, Web Forms, Active Directory auth), critical blockers (AppDomains, Remoting, CAS, Workflow Foundation, WCF server-side, Web Forms), platform risks (COM, GDI+, Registry, Windows services blocking Linux/Graviton), and upfront remediation in the Framework codebase before porting starts. The chosen runtime (.NET 8 vs .NET 10) changes the upgrade path and support-window discussion
+- **.NET Pre-Migration Risk Surfacing (.NET 10)**: When a .NET Framework → .NET 10 migration is already committed, the analyzer surfaces every item the team needs to address before the port begins — automation-eligible items (AWS Transform for .NET / Windows Full Stack, EF6 → EF Core), manual-effort items (WCF, Web Forms, Active Directory auth), critical blockers (AppDomains, Remoting, CAS, Workflow Foundation, WCF server-side, Web Forms), platform risks (COM, GDI+, Registry, Windows services blocking Linux/Graviton), and upfront remediation in the Framework codebase before porting starts. .NET 8 is deliberately not offered as a target: its support ends 10 November 2026
 - **.NET → Java Spring Boot Path**: For teams moving off C# entirely, sizes the rewrite from .NET Framework to a Java Spring Boot + SPA stack on AWS
 - **WildFly / JBoss EAP Support**: Detects Red Hat WildFly and JBoss EAP applications via `jboss-*.xml` descriptors, `module.xml` module trees, and `org.jboss.*` / `org.wildfly.*` dependencies (with `standalone.xml` / `domain.xml` treated as corroborating-only to avoid false positives)
 - **Active Directory / Windows SSO Detection**: Identifies AD authentication scenarios (Windows SSO vs Forms Auth) as critical migration blockers with scenario-specific modernization approaches
-- **Java Modernization (Non-App-Server)**: Covers Java 8/11 → Java 17/21 JDK upgrades, `javax.*` → `jakarta.*` namespace migration, Spring Boot 1.x/2.x → 3.x staircase, Struts/JSF/Dropwizard/Servlet/JSP framework migration, WAR → executable JAR, JDK-internal API (`sun.*`) removal, removed module replacement (`java.xml.bind`, `java.activation`, `java.corba`), Log4j 1.x → Logback, and Java 17-compatibility matrix for common libraries (Hibernate, Spring Security, Jackson, Lombok, Mockito, etc.)
+- **Java Modernization (Non-App-Server)**: Covers Java 8/11 → Java 21/25 JDK upgrades, `javax.*` → `jakarta.*` namespace migration and the Jakarta EE 11 baseline, the Spring Boot 2.x → 3.5 → 4.1 staircase, Struts/JSF/Dropwizard/Servlet/JSP framework migration, WAR → executable JAR, JDK-internal API (`sun.*`) removal, removed module replacement (`java.xml.bind`, `java.activation`, `java.corba`), Log4j 1.x → Logback, and a target-JDK compatibility matrix for common libraries (Hibernate, Spring Security, Jackson, Lombok, Mockito, etc.)
 - **COBOL Modernization**: CICS online, batch processing, DB2, and VSAM migration patterns to Spring Boot with AWS Graviton targeting
 - **COBOL Business Logic Extraction**: Exhaustive line-by-line extraction of business rules from COBOL PROCEDURE DIVISIONs, categorized into 10 rule types: input validation, calculation/processing, decision/routing, data access, inter-program communication, error handling, screen/interface, batch processing, security/authorization, and temporal/state management — each traced to specific paragraph names and code locations
 - **COBOL Report Internal Consistency**: Built-in consistency rules ensuring summary-to-detail traceability, count verification across business rule categories, inventory completeness for VSAM files, DB2 tables, IMS databases, MQ queues, copybook mappings, and CICS transactions — with anti-pattern detection to prevent mismatched counts or phantom categories
 - **COBOL-Specific Deep Evaluation**: Beyond standard framework areas — assesses reverse engineering readiness, platform-specific compiler behavior (rounding, EBCDIC collation, COMP/COMP-3 layout), undocumented business rules (tribal knowledge), regulatory compliance (SOX, PCI DSS, GDPR, HIPAA), performance/operational baselines, and coexistence/migration strategy with strangler fig architecture diagrams
-- **Front-End / SPA Rewrite Sizing**: When React or Vue.js is the named front-end target, detects the current UI technology and sizes the rewrite. The front-end framework is always your input — the analyzer never compares or advocates React vs Vue. Backend-only is fully supported and skips this analysis
+- **Front-End / SPA Rewrite Sizing**: When any front-end framework is named - React, Vue, Angular, Svelte or another - detects the current UI technology and sizes the rewrite. The analysis is framework-agnostic, because the expensive work is all source-side. The framework is always your input: the analyzer never compares or advocates any of them. "Not decided yet" and "backend-only" are both first-class answers
 - **Scope-Aware Database Migration**: Detects the database footprint (engine, version, edition, data-access technology, stored-procedure/trigger/package volume) and states migration scope as an explicit question you must confirm. Recommends targets such as Aurora PostgreSQL only when you confirm migration is in scope. Programmes that keep the database are respected, not overridden
 - **Evidence-for-Specialists Framing**: Every finding is framed as evidence a modernization specialist needs to plan effectively, never as a decision the reader should make. Reports contain no go/no-go decision tables or binary readiness verdicts and no failure case studies or cautionary tales; they use positive, solutions-oriented language and direct readers to AWS Modernization Specialists or authorized AWS Modernization Partners for the implementation strategy. Hard constraints (gating findings, critical blockers, "Impact If Not Modernized") are still stated plainly as evidence
 - **Strategic Alignment**: AWS 7 Rs and Gartner TIME framework classification
@@ -57,8 +57,8 @@ Two additional dimensions layer on top of a source → target path and are only 
 - **Dual Timeline Comparison**: Traditional vs Agentic AI-Accelerated timelines showing the value of AWS Transform + Kiro
 - **Cost-Benefit Analysis**: Qualitative assessments by default (Low/Medium/High/Very High), with optional detailed pricing simulation available on request
 - **Modernization Decision Tree (.NET)**: Visual Mermaid flowchart walking through feasibility checks, platform selection, and architecture decisions with a findings map showing exactly which codebase attributes drove the recommendation
-- **Modernization Decision Tree (Java)**: Visual Mermaid flowchart evaluating JDK version, Spring usage, `javax.*`/`jakarta.*` namespace, removed JDK modules, workload I/O profile, packaging, and ARM64 readiness — producing a findings map that traces each scanned attribute to the recommended Spring Boot 3 target on ECS/EKS (Graviton where supported)
-- **Modernization Decision Tree (COBOL)**: Visual Mermaid flowchart evaluating CICS online, DB2, VSAM, batch jobs, and business logic complexity to determine the optimal migration path to Spring Boot 3.x + Java 17 on ECS Fargate/Graviton, with a findings map documenting what was scanned and discovered
+- **Modernization Decision Tree (Java)**: Visual Mermaid flowchart evaluating JDK version, Spring usage, `javax.*`/`jakarta.*` namespace, removed JDK modules, workload I/O profile, packaging, and ARM64 readiness — producing a findings map that traces each scanned attribute to the recommended Spring Boot 4.1 target on ECS/EKS (Graviton where supported)
+- **Modernization Decision Tree (COBOL)**: Visual Mermaid flowchart evaluating CICS online, DB2, VSAM, batch jobs, and business logic complexity to determine the optimal migration path to Spring Boot 4.1.x + Java 21/25 on ECS Fargate/Graviton, with a findings map documenting what was scanned and discovered
 - **Hybrid Modernization Pattern**: Automatically detects un-modernizable dependencies (e.g., Crystal Reports, COM components, deprecated J2EE libraries, Java 8-only SDKs, JDK-internal APIs) and recommends a Legacy Component Isolation architecture with EC2 sidecar + API wrappers alongside the modernized stack
 
 ## Platform Detection
@@ -95,8 +95,8 @@ The analyzer automatically detects your **source platform**, then asks you to co
 
 ### Target Confirmation
 Once the source is detected, the analyzer asks you to choose the target:
-- **.NET source** → .NET 8, .NET 10, or Java Spring Boot
-- **Any Spring Boot target** → React, Vue.js, or backend-only for the front end
+- **.NET source** → .NET 10, or Spring Boot on Java
+- **Any Spring Boot target** → which front-end framework (React, Vue, Angular, Svelte, another), or undecided, or backend-only
 - **Oracle detected** → confirms whether Oracle → PostgreSQL is in scope
 
 ## Prerequisites
@@ -115,8 +115,11 @@ Activate by mentioning:
 - "AWS migration"
 - "containerize app"
 - "modernize to Spring Boot"
-- "modernize to .NET 8"
 - "modernize to .NET 10"
+- "modernize to Spring Boot 4"
+- "Spring Boot 3 to 4"
+- "Java 8 to 21"
+- "Java 17 to 25"
 - ".NET modernization"
 - ".NET to Java"
 - ".NET to Spring Boot"
@@ -153,7 +156,7 @@ User: analyze this codebase and generate a modernization report
 
 The power will:
 1. Detect source platform (.NET, WebSphere, WebLogic, WildFly/JBoss, plain Java, or COBOL)
-2. Ask you to confirm the target platform (e.g. .NET 8/.NET 10 vs Java; React/Vue/backend-only front end; Oracle → PostgreSQL scope)
+2. Ask you to confirm the target platform (.NET 10 vs Spring Boot on Java; which front-end framework, undecided, or backend-only; Oracle → PostgreSQL scope)
 3. Load common framework files first (report structure, evaluation, AWS services), then the path-specific steering files from the authoritative dispatch table
 4. Scan codebase incrementally (context-aware for large projects)
 5. Detect database technology and state migration scope as an explicit question
@@ -196,15 +199,15 @@ legacy-app-modernization-analyzer/
     ├── report-structure.md               # Report format standards (AUTHORITATIVE) — loaded first
     ├── evaluation-framework.md           # Universal evaluation areas
     ├── aws-target-services.md            # AWS service mappings
-    ├── dotnet-to-aws.md                  # .NET Framework → .NET 8 / .NET 10 + AWS
+    ├── dotnet-to-aws.md                  # .NET Framework → .NET 10 + AWS
     ├── dotnet-to-springboot.md           # .NET Framework → Java Spring Boot + SPA
     ├── websphere-to-springboot.md        # WebSphere → Spring Boot
     ├── weblogic-to-springboot.md         # WebLogic → Spring Boot
-    ├── java-to-springboot.md             # Plain Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard) → Spring Boot 3.x + Java 17/21
+    ├── java-to-springboot.md             # Plain Java (Tomcat/Jetty, Spring MVC, Struts, JSF, Dropwizard) → Spring Boot 4.1.x + Java 21/25
     ├── wildfly-to-springboot.md          # WildFly / JBoss EAP → Spring Boot
-    ├── cobol-to-java.md                  # COBOL → Java 17+ Spring Boot 3.x (mechanical data inventory + internal consistency rules)
+    ├── cobol-to-java.md                  # COBOL → Spring Boot 4.1.x on Java 21/25 (mechanical data inventory + internal consistency rules)
     ├── j2ee-to-springboot-reactive.md    # Shared J2EE app-server module (EJB, JTA, vendor JNDI) + required J2EE/Java analysis depth
-    ├── frontend-to-spa.md                # Cross-cutting: current front-end detection and SPA rewrite sizing (React or Vue)
+    ├── frontend-to-spa.md                # Cross-cutting: current front-end detection and SPA rewrite sizing (any framework)
     └── oracle-to-postgresql.md           # Cross-cutting: Oracle → PostgreSQL workstream (loaded only when in scope)
 ```
 
