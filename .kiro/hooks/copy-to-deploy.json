@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Copy to Deploy",
+      "description": "Copy POWER.md, README.md, mcp.json and steering/*.md to the deploy folder when edited, then remove .DS_Store files. The matcher is anchored to this workspace's absolute path: the previous matcher was anchored only at the end ($), so it matched any same-named file anywhere on disk and fired on files outside this repo. deploy/** is excluded automatically because the anchor requires the file to sit directly under the workspace root.",
+      "trigger": "PostFileSave",
+      "matcher": "^/Users/davelau/Library/CloudStorage/OneDrive-amazon\\.com/Code/kiro-net-mod-analyzer/legacy-app-modernization-analyzer/(POWER\\.md|README\\.md|mcp\\.json|steering/[^/]+\\.md)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A power source file in this workspace was saved. Before acting, confirm scope from the payload: `file_path` MUST begin with `cwd`, and its path relative to `cwd` MUST be exactly POWER.md, README.md or mcp.json, or match steering/<name>.md. If the relative path starts with deploy/, STOP - that is the destination, not the source. If any check fails, STOP, copy nothing, and reply in one line that the hook fired out of scope on <file_path>.\n\nIf the checks pass: copy that ONE file to deploy/<relative path>, creating parent directories if needed. Do not re-sync unrelated files. Delete any .DS_Store files under deploy/. Verify the copy with cmp and report the single file copied in one line.\n\nNever modify the source file. This hook only copies - it must not edit README.md, POWER.md or any steering file."
+      },
+      "enabled": true
+    }
+  ]
+}

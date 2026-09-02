@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Update README on Power Changes",
+      "description": "DISABLED by choice. Would update README.md when POWER.md, mcp.json or steering files change. Three fixes applied if it is ever re-enabled: README.md removed from the matcher (it rewrote the file that triggers it, so it retriggered itself indefinitely); the matcher anchored to this workspace's absolute path (it was anchored only at the end, so it matched same-named files anywhere on disk); and the prompt now lists the deliberate README content that must survive any regeneration.",
+      "trigger": "PostFileSave",
+      "matcher": "^/Users/davelau/Library/CloudStorage/OneDrive-amazon\\.com/Code/kiro-net-mod-analyzer/legacy-app-modernization-analyzer/(POWER\\.md|mcp\\.json|steering/[^/]+\\.md)$",
+      "action": {
+        "type": "agent",
+        "prompt": "A power definition file in this workspace was saved. Before acting, confirm scope from the payload: `file_path` MUST begin with `cwd`, and its path relative to `cwd` MUST be exactly POWER.md or mcp.json, or match steering/<name>.md. If it is README.md, STOP - this hook must never be triggered by the file it edits. If the relative path starts with deploy/, STOP - that is generated output. If any check fails, STOP, change nothing, and reply in one line that the hook fired out of scope on <file_path>.\n\nIf the checks pass: review what actually changed and update README.md at the workspace root to reflect new or modified features, capabilities, MCP configuration or prerequisites. Keep it concise and user-facing.\n\nPRESERVE THESE - they are deliberate and must survive regeneration:\n- The Supported Modernization Paths table: 7 numbered rows across 6 source families, .NET-to-Java marked BETA, plus the Cross-Cutting Dimensions table beneath it\n- The note that no '.NET 8 first, then Java' bridge pathway is ever proposed\n- The Output section listing exactly 11 report sections, matching steering/report-structure.md. Do not renumber and do not add a 12th\n- The statement that all 13 steering files are inclusion: manual and reachable from the POWER.md dispatch table\n- The Version History entries\n\nMake the smallest edit that reflects the change. Do not rewrite sections that did not change."
+      },
+      "enabled": false
+    }
+  ]
+}

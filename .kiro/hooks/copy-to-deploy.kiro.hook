@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Copy to Deploy",
+  "description": "Copy POWER.md, README.md, mcp.json and steering/*.md to the deploy folder when edited, preserving folder structure and removing .DS_Store files. Scoped to this workspace only: the prompt refuses to act on files outside cwd, because the trigger patterns match on filename and fire for same-named files anywhere on disk.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "POWER.md",
+      "README.md",
+      "mcp.json",
+      "steering/*.md",
+      "steering/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A power file may have been edited. Before doing anything, run these three scope checks against the JSON payload you were given.\n\nCHECK 1 - IN WORKSPACE. The payload contains `cwd` (the workspace root) and `file_path` (the saved file). If `file_path` does not begin with `cwd`, the hook has fired on an unrelated file that merely shares a filename. These patterns match on filename and are NOT anchored to the workspace, so this happens. STOP. Copy nothing. Reply in one line that the hook fired out of scope on <file_path> and no action was taken.\n\nCHECK 2 - IS A POWER SOURCE FILE. Compute the path of `file_path` relative to `cwd`. Proceed ONLY if that relative path is exactly `POWER.md`, `README.md`, or `mcp.json`, or matches `steering/*.md` or `steering/**/*.md`. Anything else: STOP and do nothing.\n\nCHECK 3 - NOT ALREADY IN DEPLOY. If the relative path starts with `deploy/`, this is the destination, not the source. STOP - copying it again would be a no-op at best and a source/destination inversion at worst.\n\nONLY IF ALL THREE CHECKS PASS:\n1. Copy that one file to `deploy/<relative path>`, creating parent directories as needed. Do not copy anything else and do not re-sync unrelated files.\n2. Delete any `.DS_Store` files under `deploy/`.\n3. Confirm the copy byte-for-byte with `cmp`, then report the single file copied in one line.\n\nDo not modify the source file. Do not edit README.md, POWER.md or any steering file as part of this hook - this hook only copies."
+  }
+}

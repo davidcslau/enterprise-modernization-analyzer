@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Generated deployment copy of the power.
+# Produced from the tracked sources by the "Copy to Deploy" hook in .kiro/hooks/.
+# Never edit deploy/ directly — edit POWER.md, README.md, mcp.json or steering/*.md.
+deploy/
+
+# Working reference material: sample reports, questionnaires, recordings, drafts.
+# Large binaries (.docx, .xlsx, .mp4) and customer-derived content — keep out of git.
+ref/
+
+# Local Kiro settings, which may contain machine-specific or credential-bearing MCP config.
+.kiro/settings/
+
+# Everything else under .kiro/ IS tracked deliberately:
+#   .kiro/hooks/    — deploy-sync and README automation, including the workspace-anchored
+#                     matchers and scope guards. Costly to rediscover; see git history.
+#   .kiro/steering/ — analyzer-ground-rules.md binds anyone editing this repo. Its report-facing
+#                     rules are also mirrored into steering/report-structure.md so they reach
+#                     end users of the installed power.
+#   .kiro/specs/    — the design record for significant changes (requirements, design, tasks).
