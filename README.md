@@ -50,6 +50,7 @@ Two additional dimensions layer on top of a source → target path and are only 
 - **COBOL-Specific Deep Evaluation**: Beyond standard framework areas — assesses reverse engineering readiness, platform-specific compiler behavior (rounding, EBCDIC collation, COMP/COMP-3 layout), undocumented business rules (tribal knowledge), regulatory compliance (SOX, PCI DSS, GDPR, HIPAA), performance/operational baselines, and coexistence/migration strategy with strangler fig architecture diagrams
 - **Front-End / SPA Rewrite Sizing**: When React or Vue.js is the named front-end target, detects the current UI technology and sizes the rewrite. The front-end framework is always your input — the analyzer never compares or advocates React vs Vue. Backend-only is fully supported and skips this analysis
 - **Scope-Aware Database Migration**: Detects the database footprint (engine, version, edition, data-access technology, stored-procedure/trigger/package volume) and states migration scope as an explicit question you must confirm. Recommends targets such as Aurora PostgreSQL only when you confirm migration is in scope. Programmes that keep the database are respected, not overridden
+- **Evidence-for-Specialists Framing**: Every finding is framed as evidence a modernization specialist needs to plan effectively, never as a decision the reader should make. Reports contain no go/no-go decision tables or binary readiness verdicts and no failure case studies or cautionary tales; they use positive, solutions-oriented language and direct readers to AWS Modernization Specialists or authorized AWS Modernization Partners for the implementation strategy. Hard constraints (gating findings, critical blockers, "Impact If Not Modernized") are still stated plainly as evidence
 - **Strategic Alignment**: AWS 7 Rs and Gartner TIME framework classification
 - **Risk Assessment**: "Impact If Not Modernized" for every finding with probability ratings
 - **3 Migration Pathways**: Ranked by weighted Recommendation Score with visual dot indicators
@@ -210,6 +211,12 @@ legacy-app-modernization-analyzer/
 All 13 steering files are `inclusion: manual` and every one is reachable from the POWER.md Step 2 dispatch table. Nothing loads implicitly, by pattern match, or by transclusion from another steering file.
 
 ## Version History
+
+### v3.1.0 - Report Tone and Framing Rules Now Ship With the Power
+- The analyzer's tone and framing rules are now part of `steering/report-structure.md`, so they apply to **every** generated report. Previously they lived only in workspace-level steering, which meant they governed development of this power but never reached an installed copy
+- Added as authoritative rules 17–21 plus a dedicated **Report Tone and Framing** section: findings are evidence rather than instructions; no go/no-go decision tables or binary readiness verdicts; no failure case studies; always direct readers to AWS Modernization Specialists or authorized partners; positive, solutions-oriented language
+- Clarified how this interacts with the rest of the spec: gating findings, critical blockers and "Impact If Not Modernized" are still required and stated plainly — surfacing a hard constraint is evidence, not a verdict
+- Repo hygiene: exclusions moved from the local-only `.git/info/exclude` into a tracked `.gitignore`, and `.kiro/hooks/`, `.kiro/steering/` and `.kiro/specs/` are now tracked so the automation, ground rules and design records survive a fresh clone
 
 ### v3.0.0 - Six Source Families, Two Dimensions, Questionnaire-Grade Depth
 - Two-dimension analysis model: detected **source** + user-confirmed **target** (target never assumed)

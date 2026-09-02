@@ -26,6 +26,29 @@ This defines the standard report structure for ALL modernization analyses (.NET,
 14. **ABSOLUTELY NO ASCII ART DIAGRAMS** - ALL diagrams MUST use Mermaid.js syntax ONLY. The single permitted exception is a plain directory/file tree inside a fenced code block (see Visualization Requirements below)
 15. **Visual dot indicators for scoring** - Use ●●●●●●●●●○ (9) format in Pathway Scoring Matrix
 16. **OPTIONAL detailed pricing** - User can request 1,000 vCPU assumption with real AWS HK region pricing (see Section 9 Appendix)
+17. **Findings are EVIDENCE, not instructions** - Frame every finding as evidence a modernization specialist needs in order to plan. The report must never tell readers to make modernization decisions themselves (see Report Tone and Framing below)
+18. **NO go/no-go decision tables** - No binary decision frameworks, readiness verdicts or proceed/do-not-proceed matrices
+19. **NO failure case studies** - No cautionary tales, no named company losses, no historical project failures
+20. **Direct readers to specialists** - Always point to AWS Modernization Specialists or authorized AWS Modernization Partners for the implementation strategy
+21. **Positive, solutions-oriented language** - Frame risks as considerations a specialist can address, not as blockers
+
+---
+
+## REPORT TONE AND FRAMING
+
+**These rules are authoritative and apply to every section of every report, on every platform path.**
+
+- **All evaluation areas and findings must be framed as evidence for modernization specialists** — capturing what they need to plan effectively. The report must **never** tell readers to make modernization decisions themselves.
+- **Never include go/no-go decision tables or binary decision frameworks.** The report provides evidence and analysis; the decision on how to proceed belongs to qualified modernization professionals. This includes anything shaped like a readiness verdict, a proceed/do-not-proceed matrix, or a "should you migrate?" summary.
+- **Never include historical failure case studies or scare stories.** The report should empower and inform, not create fear or paralysis. Do not reference specific company losses or project failures as cautionary tales.
+- **Always direct readers to engage with AWS Modernization Specialists or authorized AWS Modernization Partners** to develop a comprehensive implementation strategy. The Professional Advisory Notice at the top of every report reinforces this.
+- **Use positive, solutions-oriented language throughout.** Frame risks as considerations that specialists can address, not as blockers that prevent action.
+
+**How this interacts with the rest of this file.** Gating findings, critical blockers and the "Impact
+If Not Modernized" analysis are all still required and must be stated plainly — surfacing a hard
+constraint is evidence, not a verdict. The distinction is between *"this dependency has no
+target-compatible version, and here is what that constrains"* (correct) and *"this application is not
+a viable candidate"* (a decision that is not the analyzer's to make).
 
 ---
 
